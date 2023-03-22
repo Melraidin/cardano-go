@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/echovl/cardano-go/crypto"
+	"github.com/safanaj/cardano-go/crypto"
 )
 
 type StakeCredentialType uint64
