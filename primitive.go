@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/echovl/cardano-go/internal/cbor"
+	"github.com/safanaj/cardano-go/internal/cbor"
 )
 
 type Network byte

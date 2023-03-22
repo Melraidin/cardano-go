@@ -1,8 +1,17 @@
+GOGEN = go generate
 GOBUILD = go build
 GOTEST = go test
 
+## TODO: check if git and autotools are available to generate dependencies for libsodium
+./libsodium/_c_libsodium_built/libsodium.a:
+	$(GOGEN) ./libsodium/...
+	touch $@
+
+csigner: ./libsodium/_c_libsodium_built/libsodium.a
+	CGO_ENABLED=1 $(GOBUILD) -o ./cli/build/$@ cli/$@/main.go
+
 cwallet:
-	$(GOBUILD) -o ./cli/build/cwallet cli/main.go
+	$(GOBUILD) -o ./cli/build/$@ cli/$@/main.go
 
 install:
 	@cp ./cli/build/cwallet /usr/bin/

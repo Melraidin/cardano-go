@@ -8,8 +8,8 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/echovl/cardano-go/internal/bech32"
-	"github.com/echovl/cardano-go/internal/cbor"
+	"github.com/safanaj/cardano-go/internal/bech32"
+	"github.com/safanaj/cardano-go/internal/cbor"
 	"golang.org/x/crypto/blake2b"
 )
 

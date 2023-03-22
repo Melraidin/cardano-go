@@ -1,9 +1,10 @@
 package cardano
 
 import (
+	"encoding/hex"
 	"fmt"
 
-	"github.com/echovl/cardano-go/internal/cbor"
+	"github.com/safanaj/cardano-go/internal/cbor"
 )
 
 var cborEnc, _ = cbor.CanonicalEncOptions().EncMode()
@@ -25,4 +26,17 @@ func getTypeFromCBORArray(data []byte) (uint64, error) {
 	}
 
 	return t, nil
+}
+
+func GetBytesFromCBORHex(cborHex string) ([]byte, error) {
+	cborData, err := hex.DecodeString(cborHex)
+	if err != nil {
+		return nil, err
+	}
+	var data []byte
+	err = cborDec.Unmarshal(cborData, &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

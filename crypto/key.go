@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"golang.org/x/crypto/sha3"
 
-	"github.com/echovl/cardano-go/internal/bech32"
+	"github.com/safanaj/cardano-go/internal/bech32"
 	"github.com/echovl/ed25519"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/pbkdf2"

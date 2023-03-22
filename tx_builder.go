@@ -2,7 +2,9 @@ package cardano
 
 import (
 	"fmt"
-	"github.com/echovl/cardano-go/crypto"
+	"math"
+
+	"github.com/melraidin/cardano-go/crypto"
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -142,15 +144,37 @@ func (tb *TxBuilder) MinCoinsForTxOut(txOut *TxOutput) Coin {
 // calculateMinFee computes the minimal fee required for the transaction.
 func (tb *TxBuilder) calculateMinFee() Coin {
 	txBytes := tb.tx.Bytes()
-	txLength := uint64(len(txBytes))
-	// for each additional witnesses there will be an additional 100 bytes,
-	// (32 public key, 64 signature, 4 index/key in cbor)
-	txLength += uint64(tb.additionalWitnesses * 100)
-	// apparently that is not enough, so just consider 1 additional byte
-	// for each additional witness after the first
-	if tb.additionalWitnesses > 1 {
-		txLength += uint64(tb.additionalWitnesses - 1)
+	// checking for additionalWitnesses we gonna add fake/empty VKeyWitnesses just to guess the future length and so cost/fee
+	if tb.additionalWitnesses > 0 {
+		// we can assume the list of VKeyWitnessSet is not a nil value, as `build()` method is always allocating a slice
+		additionalVKeyWitnessSet := make([]VKeyWitness, tb.additionalWitnesses)
+		for i := uint(0); i < tb.additionalWitnesses; i++ {
+			additionalVKeyWitnessSet[i] = VKeyWitness{
+				VKey:      crypto.PubKey(make([]byte, 32)),
+				Signature: make([]byte, 64),
+			}
+		}
+		tb.tx.WitnessSet.VKeyWitnessSet = append(tb.tx.WitnessSet.VKeyWitnessSet, additionalVKeyWitnessSet...)
 	}
+
+	txLength := uint64(len(txBytes))
+
+	// restore tx as it was before to add fake additionalWitnesses
+	if tb.additionalWitnesses > 0 {
+		tb.tx.WitnessSet.VKeyWitnessSet = tb.tx.WitnessSet.VKeyWitnessSet[:len(tb.tx.WitnessSet.VKeyWitnessSet)-int(tb.additionalWitnesses)]
+	}
+
+	//////// the below is just an old a bit arbitrary approach, here just for memories/references,
+	//////// replaced by fake/empty additionalWitnesses approach
+	// // for each additional witnesses there will be an additional 100 bytes,
+	// // (32 public key, 64 signature, 4 index/key in cbor)
+	// txLength += uint64(tb.additionalWitnesses * 100)
+	// // apparently that is not enough, so just consider 1 additional byte
+	// // for each additional witness after the first
+	// if tb.additionalWitnesses > 1 {
+	// 	txLength += uint64(tb.additionalWitnesses - 1)
+	// }
+
 	return tb.protocol.MinFeeA*Coin(txLength) + tb.protocol.MinFeeB
 }
 
@@ -175,7 +199,7 @@ func (tb *TxBuilder) Build() (*Tx, error) {
 		totalProduced := outputAmount.Add(NewValue(tb.tx.Body.Fee))
 		if inputOutputCmp := totalProduced.Cmp(inputAmount); inputOutputCmp == 1 || inputOutputCmp == 2 {
 			return nil, fmt.Errorf(
-				"insuficient input in transaction, got %v want %v",
+				"insufficient input in transaction, got %v want %v",
 				inputAmount,
 				totalProduced,
 			)
@@ -216,7 +240,7 @@ func (tb *TxBuilder) addChangeIfNeeded(inputAmount, outputAmount *Value) error {
 
 	if inputOutputCmp := inputAmount.Cmp(outputAmount); inputOutputCmp == -1 || inputOutputCmp == 2 {
 		return fmt.Errorf(
-			"insuficient input in transaction, got %v want atleast %v",
+			"insufficient input in transaction, got %v want atleast %v",
 			inputAmount,
 			outputAmount,
 		)
@@ -236,7 +260,7 @@ func (tb *TxBuilder) addChangeIfNeeded(inputAmount, outputAmount *Value) error {
 			return nil
 		}
 		return fmt.Errorf(
-			"insuficient input for change output with multiassets, got %v want %v",
+			"insufficient input for change output with multiassets, got %v want %v",
 			inputAmount.Coin,
 			inputAmount.Coin+changeMinCoins-changeAmount.Coin,
 		)
@@ -253,7 +277,7 @@ func (tb *TxBuilder) addChangeIfNeeded(inputAmount, outputAmount *Value) error {
 			return nil
 		}
 		return fmt.Errorf(
-			"insuficient input for change output with multiassets, got %v want %v",
+			"insufficient input for change output with multiassets, got %v want %v",
 			inputAmount.Coin,
 			changeMinCoins,
 		)

@@ -1,4 +1,4 @@
-module github.com/echovl/cardano-go
+module github.com/safanaj/cardano-go
 
 go 1.18
 
@@ -8,8 +8,11 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/echovl/ed25519 v0.2.0
+	github.com/fxamacker/cbor v1.5.1
 	github.com/matoous/go-nanoid/v2 v2.0.0
+	github.com/otiai10/copy v1.9.0
 	github.com/spf13/cobra v1.4.0
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/x448/float16 v0.8.4
@@ -41,11 +44,10 @@ require (
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
