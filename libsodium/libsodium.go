@@ -3,8 +3,8 @@ package libsodium
 //go:generate go run ./build_libsodium_helper.go _c_libsodium_built
 
 /*
-#cgo CFLAGS: -Wall -I${SRCDIR}/_c_libsodium_built/include
-#cgo LDFLAGS: -L${SRCDIR}/_c_libsodium_built -l:libsodium.a
+#cgo CFLAGS: -Wall
+#cgo LDFLAGS: -l:libsodium.a
 #include <sodium/core.h>
 #include <sodium/crypto_vrf.h>
 #include <sodium/crypto_vrf_ietfdraft03.h>
@@ -14,10 +14,8 @@ package libsodium
 #include <stddef.h>
 */
 import "C"
+
 import (
-
-	// "fmt"
-
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
@@ -26,54 +24,17 @@ import (
 	"sync"
 
 	_ "github.com/otiai10/copy"
-	"github.com/safanaj/cardano-go/internal/cbor"
+	"github.com/safanaj/cardano-go"
 	"golang.org/x/crypto/blake2b"
 )
 
 func getBytesFromCBORHexOrDie(cborHex string) []byte {
-	var data []byte
-	cborData, err := hex.DecodeString(cborHex)
-	if err != nil {
-		panic(err)
-	}
-	err = cbor.Unmarshal(cborData, &data)
+	data, err := cardano.GetBytesFromCBORHex(cborHex)
 	if err != nil {
 		panic(err)
 	}
 	return data
 }
-
-// func GetVrfSKeyDataFromCborHex(cborHex string) []byte {
-// 	// // short way
-// 	// return []byte(cborHex[4:])
-
-// 	// // long way
-// 	var vrfSkeyData []byte
-// 	cborData, err := hex.DecodeString(cborHex)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	err = cbor.Unmarshal(cborData, &vrfSkeyData)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	return vrfSkeyData
-// }
-
-// func GetVrfVKeyDataFromCborHex(cborHex string) []byte {
-// 	// long way
-// 	// var vrfSkeyData = make([]byte, 32)
-// 	var vrfSkeyData []byte
-// 	cborData, err := hex.DecodeString(cborHex)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	err = cbor.Unmarshal(cborData, &vrfSkeyData)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	return vrfSkeyData
-// }
 
 func MkSeed(slot int, eta0 string) []byte {
 	eta0bytes, _ := hex.DecodeString(eta0)
@@ -93,7 +54,6 @@ func Initialize_libsodium() int {
 		sodium_init_rc = int(C.sodium_init())
 	})
 	return sodium_init_rc
-
 }
 
 func CryptoVrfProofToHash(proof []byte) ([]byte, error) {
