@@ -8,7 +8,10 @@ GOTEST = go test
 	touch $@
 
 csigner: ./libsodium/_c_libsodium_built/libsodium.a
-	CGO_ENABLED=1 $(GOBUILD) -o ./cli/build/$@ cli/$@/main.go
+	CGO_ENABLED=1 \
+	CGO_CFLAGS=-I$(CURDIR)/libsodium/_c_libsodium_built/include \
+	CGO_LDFLAGS=-L$(CURDIR)/libsodium/_c_libsodium_built \
+	$(GOBUILD) -o ./cli/build/$@ cli/$@/main.go
 
 cwallet:
 	$(GOBUILD) -o ./cli/build/$@ cli/$@/main.go
