@@ -56,6 +56,15 @@ func Initialize_libsodium() int {
 	return sodium_init_rc
 }
 
+func CryptoVrfPublicKeyFromSecretKey(sk []byte) ([]byte, error) {
+	if len(sk) != int(C.int(C.crypto_vrf_secretkeybytes())) {
+		return nil, fmt.Errorf("Invalid vrf private key")
+	}
+	pk := make([]byte, C.int(C.crypto_vrf_publickeybytes()))
+	C.crypto_vrf_sk_to_pk((*C.uchar)(&pk[0]), (*C.uchar)(&sk[0]))
+	return pk, nil
+}
+
 func CryptoVrfProofToHash(proof []byte) ([]byte, error) {
 	if len(proof) != int(C.int(C.crypto_vrf_proofbytes())) {
 		return nil, fmt.Errorf("Invalid proof")
@@ -69,23 +78,18 @@ func CryptoVrfProofToHash(proof []byte) ([]byte, error) {
 }
 
 func CryptoVrfProve(sk, seed []byte) ([]byte, error) {
-	fmt.Printf("CryptoVrfProve\n")
 	if len(sk) != int(C.int(C.crypto_vrf_secretkeybytes())) {
-		fmt.Printf("CryptoVrfProve: Invalid vrf private key\n")
 		return nil, fmt.Errorf("Invalid vrf private key")
 	}
 	if len(seed) != int(C.int(C.crypto_vrf_seedbytes())) {
-		fmt.Printf("CryptoVrfProve: Invalid data to sign/prove\n")
 		return nil, fmt.Errorf("Invalid data to sign/prove")
 	}
 
 	proof := make([]byte, C.int(C.crypto_vrf_proofbytes()))
 	rc := C.int(C.crypto_vrf_prove((*C.uchar)(&proof[0]), (*C.uchar)(&sk[0]), (*C.uchar)(&seed[0]), C.ulonglong(len(seed))))
-	fmt.Printf("cap: %d - len: %d -- %v ---> rc: %d\n", cap(proof), len(proof), proof, rc)
 	if rc != 0 {
 		return nil, fmt.Errorf("Failed crypto_vrf_proof_to_hash. return code: %d", rc)
 	}
-	fmt.Printf("cap: %d - len: %d -- %v\n", cap(proof), len(proof), proof)
 	return proof, nil
 }
 

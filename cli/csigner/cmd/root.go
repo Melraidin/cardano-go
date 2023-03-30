@@ -27,4 +27,5 @@ func init() {
 	rootCmd.Flags().Bool("cip22", false, "Use CIP22 (VRF keys)")
 	rootCmd.Flags().String("data", "", "message to sign/verify")
 	rootCmd.Flags().String("nonce", "", "a lower-case hex string (optional)")
+	rootCmd.Flags().Bool("json", false, "Output formatted as JSON")
 }
