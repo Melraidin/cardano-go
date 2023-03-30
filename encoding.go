@@ -40,3 +40,11 @@ func GetBytesFromCBORHex(cborHex string) ([]byte, error) {
 	}
 	return data, nil
 }
+
+func GetCBORHexFromBytes(data []byte) (string, error) {
+	cborData, err := cborEnc.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(cborData), nil
+}

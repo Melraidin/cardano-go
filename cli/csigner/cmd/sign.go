@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 
+	"github.com/safanaj/cardano-go"
 	"github.com/safanaj/cardano-go/crypto"
 	"github.com/safanaj/cardano-go/libsodium"
 	"github.com/spf13/cobra"
@@ -19,6 +21,11 @@ var signCmd = &cobra.Command{
 		useCIP22, _ := cmd.Flags().GetBool("cip22")
 		data, _ := cmd.Flags().GetString("data")
 		nonce, _ := cmd.Flags().GetString("nonce")
+		outJson, _ := cmd.Flags().GetBool("json")
+
+		var (
+			outPubKey, outSignature string
+		)
 
 		var sigBytes []byte
 		dataHex := hex.EncodeToString([]byte(data))
@@ -45,16 +52,34 @@ var signCmd = &cobra.Command{
 				return fmt.Errorf("invalid computed seed, expected valid hex-encoded string: %v", err)
 			}
 
+			pubKey, err := libsodium.CryptoVrfPublicKeyFromSecretKey(prvKeyBytes)
+			if err != nil {
+				return fmt.Errorf("invalid private key: %v", err)
+			}
+			pubKeyCBORHex, err := cardano.GetCBORHexFromBytes(pubKey)
+			if err != nil {
+				return fmt.Errorf("internal error: %v", err)
+			}
+
 			dataHashBytes := blake2b.Sum256(seedData)
 			sigBytes, rerr = libsodium.CryptoVrfProve(prvKeyBytes, dataHashBytes[:])
+			outPubKey = pubKeyCBORHex
 		} else {
 			prvKey := crypto.PrvKey(prvKeyBytes)
-			// sigBytes = prvKey.Sign([]byte(dataHex))
 			sigBytes = prvKey.Sign([]byte(data))
-			fmt.Println("public key: ", prvKey.PubKey().String())
+			outPubKey = prvKey.PubKey().String()
 		}
+		outSignature = hex.EncodeToString(sigBytes)
 		if rerr == nil {
-			fmt.Println("signature: ", hex.EncodeToString(sigBytes))
+			if !outJson {
+				fmt.Println("public key: ", outPubKey)
+				fmt.Println("signature: ", outSignature)
+			} else {
+				out, _ := json.MarshalIndent(map[string]string{
+					"publicKey": outPubKey, "signature": outSignature,
+				}, "", "  ")
+				fmt.Println(string(out))
+			}
 		} else {
 			fmt.Println("failure: ", rerr)
 		}
