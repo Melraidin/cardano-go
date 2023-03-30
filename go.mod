@@ -8,7 +8,6 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/echovl/ed25519 v0.2.0
-	github.com/fxamacker/cbor v1.5.1
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/otiai10/copy v1.9.0
 	github.com/spf13/cobra v1.4.0
