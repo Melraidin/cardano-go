@@ -17,6 +17,7 @@ type TxBuilder struct {
 	changeReceiver *Address
 
 	additionalWitnesses uint
+	additionalFee       Coin
 }
 
 // NewTxBuilder returns a new instance of TxBuilder.
@@ -54,6 +55,12 @@ func (tb *TxBuilder) SetFee(fee Coin) {
 // This is useful to compute the real length and so fee in advance
 func (tb *TxBuilder) SetAdditionalWitnesses(witnesses uint) {
 	tb.additionalWitnesses = witnesses
+}
+
+// SetAdditionalFee sets arbitrary additional fee coins, like a tip or amount to burn.
+// This is useful to allow workaround around the auto computation of the minimal fee
+func (tb *TxBuilder) SetAdditionalFee(additionalFee Coin) {
+	tb.additionalFee = additionalFee
 }
 
 // AddAuxiliaryData adds auxiliary data to the transaction.
@@ -149,7 +156,6 @@ func (tb *TxBuilder) MinCoinsForTxOut(txOut *TxOutput) Coin {
 
 // calculateMinFee computes the minimal fee required for the transaction.
 func (tb *TxBuilder) calculateMinFee() Coin {
-	txBytes := tb.tx.Bytes()
 	// checking for additionalWitnesses we gonna add fake/empty VKeyWitnesses just to guess the future length and so cost/fee
 	if tb.additionalWitnesses > 0 {
 		// we can assume the list of VKeyWitnessSet is not a nil value, as `build()` method is always allocating a slice
@@ -163,13 +169,22 @@ func (tb *TxBuilder) calculateMinFee() Coin {
 		tb.tx.WitnessSet.VKeyWitnessSet = append(tb.tx.WitnessSet.VKeyWitnessSet, additionalVKeyWitnessSet...)
 	}
 
-	txLength := uint64(len(txBytes))
+	// checking for auxiliary_data and if present add a fake 32 bytes for the future hash
+	if tb.tx.AuxiliaryData != nil {
+		fakeAuxDataHash32 := Hash32(make([]byte, 32))
+		tb.tx.Body.AuxiliaryDataHash = &fakeAuxDataHash32
+	}
+
+	txLength := uint64(len(tb.tx.Bytes()))
 
 	// restore tx as it was before to add fake additionalWitnesses
 	if tb.additionalWitnesses > 0 {
 		tb.tx.WitnessSet.VKeyWitnessSet = tb.tx.WitnessSet.VKeyWitnessSet[:len(tb.tx.WitnessSet.VKeyWitnessSet)-int(tb.additionalWitnesses)]
 	}
 
+	if tb.tx.AuxiliaryData != nil {
+		tb.tx.Body.AuxiliaryDataHash = nil
+	}
 	//////// the below is just an old a bit arbitrary approach, here just for memories/references,
 	//////// replaced by fake/empty additionalWitnesses approach
 	// // for each additional witnesses there will be an additional 100 bytes,
@@ -181,7 +196,7 @@ func (tb *TxBuilder) calculateMinFee() Coin {
 	// 	txLength += uint64(tb.additionalWitnesses - 1)
 	// }
 
-	return tb.protocol.MinFeeA*Coin(txLength) + tb.protocol.MinFeeB
+	return tb.protocol.MinFeeA*Coin(txLength) + tb.protocol.MinFeeB + tb.additionalFee
 }
 
 // Sign adds signing keys to create signatures for the witness set.
