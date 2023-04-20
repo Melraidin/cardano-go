@@ -100,20 +100,163 @@ func (t TxInput) String() string {
 	return fmt.Sprintf("{TxHash: %v, Index: %v, Amount: %v}", t.TxHash, t.Index, t.Amount)
 }
 
-// TxInput is the transaction output.
-type TxOutput struct {
+// DatumType
+type DatumType int
+
+const (
+	DatumTypeHash DatumType = iota
+	DatumTypeData
+)
+
+// DatumOption
+type DatumOption struct {
+	_    struct{} `cbor:",toarray"`
+	Type DatumType
+	Data []byte
+}
+
+func (do *DatumOption) String() string {
+	switch do.Type {
+	case DatumTypeHash:
+		return fmt.Sprintf("(hash: %v)", hex.EncodeToString(do.Data))
+	case DatumTypeData:
+		return fmt.Sprintf("(data: %v)", do.Data)
+	default:
+		return fmt.Sprintf("%v", *do)
+	}
+}
+
+// TxLegacyOutput is the transaction output before alonzo, shelley-mary-allegra.
+type TxLegacyOutput struct {
 	_       struct{} `cbor:",toarray"`
 	Address Address
 	Amount  *Value
 }
 
+type TxAlonzoOutput struct {
+	_         struct{} `cbor:",toarray"`
+	Address   Address
+	Amount    *Value
+	DatumHash []byte `cbor:",omitempty"`
+}
+
+// TxBabbageOutput is the transaction output after alonzo, in babbage era.
+type TxBabbageOutput struct {
+	Address Address `cbor:"0,keyasint"`
+	Amount  *Value  `cbor:"1,keyasint"`
+	// TODO: double-check/verify if the below 2 fields need double CBOR enc/dec-oding,
+	// in the cddl those are tagged as #6.24 , means encoded-cbor
+	DatumOption *DatumOption `cbor:"2,keyasint,omitempty"`
+	ScriptRef   []byte       `cbor:"3,keyasint,omitempty"`
+}
+
+// TxOutput is the transaction output after alonzo, in babbage era.
+type TxOutput struct {
+	TxBabbageOutput
+}
+
 // NewTxOutput creates a new instance of TxOutput
-func NewTxOutput(addr Address, amount *Value) *TxOutput {
-	return &TxOutput{Address: addr, Amount: amount}
+func NewTxOutput(addr Address, amount *Value, extras ...any) *TxOutput {
+	txo := &TxOutput{TxBabbageOutput{Address: addr, Amount: amount}}
+	if len(extras) > 2 {
+		return txo
+	} else if len(extras) == 2 {
+		// this is a babbage tx output
+		if do, ok := extras[0].(*DatumOption); ok {
+			txo.DatumOption = do
+		}
+		if sr, ok := extras[1].([]byte); ok {
+			txo.ScriptRef = sr
+		}
+	} else if len(extras) == 1 {
+		// this could be a babbage tx output or an alonzo one, depends on the extra param type
+		switch v := extras[0].(type) {
+		case []byte:
+			// it is an alonzo tx output, this is the datum hash
+			txo.DatumOption = &DatumOption{Type: DatumTypeHash, Data: v}
+		case *DatumOption:
+			txo.DatumOption = v
+		}
+	}
+	return txo
+}
+
+func (t *TxOutput) UnmarshalCBOR(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	// should we check for arbitrary long container types, like 0xbf (map) or 0x9f (list) ?
+	switch data[0] & 0xf0 {
+	case 0xa0:
+		var rto TxBabbageOutput
+		// this is a map, so use babbage era, post alonzo format
+		err := cborDec.Unmarshal(data, &rto)
+		if err != nil {
+			return err
+		}
+		t.Address = rto.Address
+		t.Amount = rto.Amount
+		t.DatumOption = rto.DatumOption
+		t.ScriptRef = rto.ScriptRef
+	case 0x80:
+		if (data[0] & 0x0f) == 0x03 {
+			var lto TxAlonzoOutput
+			err := cborDec.Unmarshal(data, &lto)
+			if err != nil {
+				return err
+			}
+
+			t.Address = lto.Address
+			t.Amount = lto.Amount
+			if lto.DatumHash != nil {
+				t.DatumOption = &DatumOption{Type: DatumTypeHash, Data: lto.DatumHash}
+			}
+		} else if (data[0] & 0x0f) == 0x02 {
+			var lto TxLegacyOutput
+			err := cborDec.Unmarshal(data, &lto)
+			if err != nil {
+				return err
+			}
+			t.Address = lto.Address
+			t.Amount = lto.Amount
+		}
+	}
+	return nil
+}
+
+// MarshalCBOR implements cbor.Marshaler.
+func (t *TxOutput) MarshalCBOR() ([]byte, error) {
+	// we want to minimize the output length, so prefer legacy, alonzo, babbage
+	if t.ScriptRef != nil {
+		// we need full babbage output
+		return cborEnc.Marshal(t.TxBabbageOutput)
+	}
+	if t.DatumOption != nil {
+		// we could use babbage or alonzo format
+		if t.DatumOption.Type == DatumTypeHash {
+			// use alonzo format
+			return cborEnc.Marshal(TxAlonzoOutput{
+				Address:   t.Address,
+				Amount:    t.Amount,
+				DatumHash: t.DatumOption.Data,
+			})
+		}
+		return cborEnc.Marshal(t.TxBabbageOutput)
+	}
+	// just use legacy tx output as we have just address and amount
+	return cborEnc.Marshal(TxLegacyOutput{Address: t.Address, Amount: t.Amount})
 }
 
 func (t TxOutput) String() string {
-	return fmt.Sprintf("{Address: %v, Amount: %v}", t.Address, t.Amount)
+	s := fmt.Sprintf("{Address: %v, Amount: %v", t.Address, t.Amount)
+	if t.DatumOption != nil {
+		s += fmt.Sprintf(", DatumOption: %v", t.DatumOption)
+	}
+	if t.ScriptRef != nil {
+		s += fmt.Sprintf(", ScriptRef: %v", t.ScriptRef)
+	}
+	s += "}"
+	return s
 }
 
 type TxBody struct {
@@ -129,10 +272,13 @@ type TxBody struct {
 	AuxiliaryDataHash     *Hash32       `cbor:"7,keyasint,omitempty"`
 	ValidityIntervalStart Uint64        `cbor:"8,keyasint,omitempty"`
 	Mint                  *Mint         `cbor:"9,keyasint,omitempty"`
-	ScriptDataHash        *Hash32       `cbor:"10,keyasint,omitempty"`
-	Collateral            []TxInput     `cbor:"11,keyasint,omitempty"`
-	RequiredSigners       []AddrKeyHash `cbor:"12,keyasint,omitempty"`
-	NetworkID             Uint64        `cbor:"13,keyasint,omitempty"`
+	ScriptDataHash        *Hash32       `cbor:"11,keyasint,omitempty"`
+	Collateral            []*TxInput    `cbor:"13,keyasint,omitempty"`
+	RequiredSigners       []AddrKeyHash `cbor:"14,keyasint,omitempty"`
+	NetworkID             Uint64        `cbor:"15,keyasint,omitempty"`
+	CollateralReturn      *TxOutput     `cbor:"16,keyasint,omitempty"`
+	TotalCollateral       Coin          `cbor:"17,keyasint,omitempty"`
+	ReferenceInputs       []*TxInput    `cbor:"18,keyasint,omitempty"`
 }
 
 // Hash returns the transaction body hash using blake2b256.

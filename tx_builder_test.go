@@ -88,7 +88,7 @@ func TestMinUTXO(t *testing.T) {
 
 			txBuilder := NewTxBuilder(alonzoProtocol)
 
-			txOutput := &TxOutput{Amount: NewValueWithAssets(0, multiAsset)}
+			txOutput := NewTxOutput(Address{}, NewValueWithAssets(0, multiAsset))
 			got := txBuilder.MinCoinsForTxOut(txOutput)
 			want := tc.minUTXO
 
@@ -406,7 +406,7 @@ func TestAddChangeIfNeeded(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	emptyTxOut := &TxOutput{Amount: NewValue(0)}
+	emptyTxOut := NewTxOutput(Address{}, NewValue(0))
 
 	type fields struct {
 		tx       Tx
@@ -436,12 +436,7 @@ func TestAddChangeIfNeeded(t *testing.T) {
 						Amount: NewValue(200000),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						Amount:  NewValue(200000),
-					},
-				},
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(200000))},
 			},
 			wantErr: true,
 		},
@@ -456,12 +451,7 @@ func TestAddChangeIfNeeded(t *testing.T) {
 						Amount: NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut) + 165501),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						Amount:  NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)),
-					},
-				},
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)))},
 			},
 		},
 		{
@@ -475,12 +465,7 @@ func TestAddChangeIfNeeded(t *testing.T) {
 						Amount: NewValue(2*txBuilder.MinCoinsForTxOut(emptyTxOut) - 1),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						Amount:  NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)),
-					},
-				},
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)))},
 			},
 		},
 		{
@@ -494,12 +479,7 @@ func TestAddChangeIfNeeded(t *testing.T) {
 						Amount: NewValue(2*txBuilder.MinCoinsForTxOut(emptyTxOut) + 162685),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						Amount:  NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)),
-					},
-				},
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)))},
 			},
 		},
 		{
@@ -513,12 +493,7 @@ func TestAddChangeIfNeeded(t *testing.T) {
 						Amount: NewValue(3 * txBuilder.MinCoinsForTxOut(emptyTxOut)),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						Amount:  NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)),
-					},
-				},
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)))},
 			},
 			hasChange: true,
 		},
@@ -533,13 +508,8 @@ func TestAddChangeIfNeeded(t *testing.T) {
 						Amount: NewValue(2*txBuilder.MinCoinsForTxOut(emptyTxOut) + 164137),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						Amount:  NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)),
-					},
-				},
-				ttl: 100,
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(txBuilder.MinCoinsForTxOut(emptyTxOut)))},
+				ttl:     100,
 			},
 		},
 	}
@@ -611,8 +581,6 @@ func TestCalculateMinFee(t *testing.T) {
 		inputs   []*TxInput
 		outputs  []*TxOutput
 		certs    []Certificate
-		// ttl uint64
-		// fee uint64
 	}
 
 	testcases := []struct {
@@ -632,12 +600,7 @@ func TestCalculateMinFee(t *testing.T) {
 						Amount: NewValue(20000000),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						Amount:  NewValue(18831991),
-					},
-				},
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(18831991))},
 			},
 			expectedFee: Coin(165413), //Coin(168009),
 		},
@@ -666,13 +629,7 @@ func TestCalculateMinFee(t *testing.T) {
 						Amount: NewValue(20000000),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						// Amount:  NewValue(19823103),
-						Amount: NewValue(1982310),
-					},
-				},
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(1982310))},
 			},
 			expectedFee:         Coin(174301), //Coin(176897),
 			additionalWitnesses: 2,
@@ -688,12 +645,7 @@ func TestCalculateMinFee(t *testing.T) {
 						Amount: NewValue(20000000),
 					},
 				},
-				outputs: []*TxOutput{
-					{
-						Address: receiver,
-						Amount:  NewValue(19827547),
-					},
-				},
+				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(19827547))},
 				certs: []Certificate{
 					func() Certificate {
 						c, _ := NewStakeDelegationCertificate(crypto.PubKey(make([]byte, 32)), Hash28(make([]byte, 28)))
