@@ -16,8 +16,9 @@ csigner: ./libsodium/_c_libsodium_built/libsodium.a
 cwallet:
 	$(GOBUILD) -o ./cli/build/$@ cli/$@/main.go
 
-install:
+install: cwallet csigner
 	@cp ./cli/build/cwallet /usr/bin/
+	@cp ./cli/build/csigner /usr/bin/
 
 test:
 	$(GOTEST) $(go list ./... | grep -v libsodium | grep -v 'cli/')

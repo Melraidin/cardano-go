@@ -1,6 +1,6 @@
 # cardano-go
 
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/echovl/cardano-go)](https://pkg.go.dev/github.com/echovl/cardano-go) ![ci](https://github.com/echovl/cardano-go/workflows/test/badge.svg)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/safanaj/cardano-go)](https://pkg.go.dev/github.com/safanaj/cardano-go) ![ci](https://github.com/safanaj/cardano-go/workflows/test/badge.svg)
 
 cardano-go is a library for creating go applicactions that interact with the Cardano Blockchain. [WIP]
 
@@ -9,7 +9,7 @@ Check out our Catalyst proposal: (https://cardano.ideascale.com/c/idea/416383)
 ## Installation
 
 ```
-$ go get github.com/echovl/cardano-go
+$ go get github.com/safanaj/cardano-go
 ```
 
 ## Usage
@@ -22,8 +22,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/blockfrost"
+	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/blockfrost"
 )
 
 func main() {
@@ -46,8 +46,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/crypto"
+	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/crypto"
 )
 
 func main() {
@@ -94,7 +94,7 @@ func main() {
 package main
 
 import (
-	"github.com/echovl/cardano-go"
+	"github.com/safanaj/cardano-go"
 )
 
 func main() {
@@ -117,8 +117,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/blockfrost"
+	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/blockfrost"
 )
 
 func main() {
@@ -138,7 +138,7 @@ func main() {
 ```go
 package main
 
-import "github.com/echovl/cardano-go"
+import "github.com/safanaj/cardano-go"
 
 func main() {
 	txBuilder := cardano.NewTxBuilder(&cardano.ProtocolParams{})
@@ -159,8 +159,8 @@ func main() {
 package main
 
 import (
-	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/crypto"
+	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/crypto"
 )
 
 func main() {
@@ -186,8 +186,8 @@ func main() {
 package main
 
 import (
-	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/crypto"
+	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/crypto"
 )
 
 func main() {
@@ -219,8 +219,8 @@ package main
 import (
 	"math/big"
 
-	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/crypto"
+	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/crypto"
 )
 
 func main() {
@@ -288,11 +288,11 @@ blockfrost_project_id: "project-id"
 ### Installation
 
 ```
-$ git clone github.com/echovl/cardano-go
+$ git clone github.com/safanaj/cardano-go
 $ make && sudo make install
 ```
 
-### Usage
+### Usage Wallet
 
 Wallet creation:
 
@@ -314,4 +314,17 @@ Send ADA:
 ```
 $ cwallet transfer echo addr1vxzfs9dj365gcdmv6dwj7auewf624ghwrtduecu37hrxsyst8gvu2 2000000
 fd3a7d6e9742fd9ddba2bd1740fa994f5c93a4f59bf88dc5f81d8d7413c5b3a9
+```
+
+### Usage Signer
+
+Sign data with stake private key in shelley format:
+
+```
+$ csigner sign --data 'data to sign' --secret-key-file path/to/stake.skey --json
+```
+
+Verify data with stake public key in shelley format:
+```
+$ csigner verify --data 'data to sign' --public-key-file path/to/stake.vkey --signature <string as per sign output> --json
 ```
