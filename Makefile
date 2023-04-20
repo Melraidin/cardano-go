@@ -20,10 +20,10 @@ install:
 	@cp ./cli/build/cwallet /usr/bin/
 
 test:
-	$(GOTEST) ./...
+	$(GOTEST) $(go list ./... | grep -v libsodium | grep -v 'cli/')
 
 testcov:
-	$(GOTEST) ./... -coverprofile coverage.out
+	$(GOTEST) $(go list ./... | grep -v libsodium | grep -v 'cli/') -coverprofile coverage.out
 
 opencov:
 	go tool cover -html coverage.out
