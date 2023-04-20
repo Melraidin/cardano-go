@@ -3,3 +3,4 @@ coverage.out
 cli/build
 temp
 .idea
+vendor
