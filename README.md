@@ -1,10 +1,12 @@
 # cardano-go
 
+This is a fork / re-brand of https://github.com/echovl/cardano-go , this fork is just to continue to develop this library as the upstream / original developer seems has lost insterest.
+
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/safanaj/cardano-go)](https://pkg.go.dev/github.com/safanaj/cardano-go) ![ci](https://github.com/safanaj/cardano-go/workflows/test/badge.svg)
 
-cardano-go is a library for creating go applicactions that interact with the Cardano Blockchain. [WIP]
+cardano-go is a library for creating go applications that interact with the Cardano Blockchain. [WIP]
 
-Check out our Catalyst proposal: (https://cardano.ideascale.com/c/idea/416383)
+This project is mainly used by me to serve https://f2lb.bardels.me/
 
 ## Installation
 
