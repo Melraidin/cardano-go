@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/safanaj/cardano-go"
 	"github.com/safanaj/cardano-go/crypto"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/tyler-smith/go-bip39"
 )
 
@@ -88,7 +88,7 @@ func (w *Wallet) Transfer(receiver cardano.Address, amount *cardano.Value) (*car
 		txBuilder.AddInputs(&cardano.TxInput{TxHash: utxo.TxHash, Index: utxo.Index, Amount: utxo.Amount})
 		inputAmount = inputAmount.Add(utxo.Amount)
 	}
-	txBuilder.AddOutputs(&cardano.TxOutput{Address: receiver, Amount: amount})
+	txBuilder.AddOutputs(cardano.NewTxOutput(receiver, amount))
 
 	tip, err := w.node.Tip()
 	if err != nil {
