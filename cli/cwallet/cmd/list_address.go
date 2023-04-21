@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/blockfrost"
-	"github.com/safanaj/cardano-go/wallet"
 	"github.com/spf13/cobra"
 )
 
@@ -18,14 +15,7 @@ var listAddressCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		useTestnet, _ := cmd.Flags().GetBool("testnet")
-		network := cardano.Mainnet
-		if useTestnet {
-			network = cardano.Testnet
-		}
-
-		node := blockfrost.NewNode(network, cfg.BlockfrostProjectID)
-		opts := &wallet.Options{Node: node}
-		client := wallet.NewClient(opts)
+		client := getClient(cmd.Context(), useTestnet, cfg)
 		defer client.Close()
 
 		id := args[0]

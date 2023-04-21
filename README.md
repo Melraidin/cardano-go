@@ -26,10 +26,12 @@ import (
 
 	"github.com/safanaj/cardano-go"
 	"github.com/safanaj/cardano-go/blockfrost"
+	// "github.com/safanaj/cardano-go/koios"
 )
 
 func main() {
 	node := blockfrost.NewNode(cardano.Mainnet, "project-id")
+	// node := koios.NewNode(cardano.Mainnet, nil)
 
 	pparams, err := node.ProtocolParams()
 	if err != nil {
@@ -121,10 +123,12 @@ import (
 
 	"github.com/safanaj/cardano-go"
 	"github.com/safanaj/cardano-go/blockfrost"
+	// "github.com/safanaj/cardano-go/koios"
 )
 
 func main() {
 	node := blockfrost.NewNode(cardano.Mainnet, "project-id")
+	// node := koios.NewNode(cardano.Mainnet, nil)
 
 	txHash, err := node.SubmitTx(&cardano.Tx{})
 	if err != nil {
@@ -285,6 +289,7 @@ Example:
 
 ```yaml
 blockfrost_project_id: "project-id"
+use_koios: false
 ```
 
 ### Installation

@@ -14,6 +14,7 @@ var (
 
 type Config struct {
 	BlockfrostProjectID string `mapstructure:"blockfrost_project_id"`
+	UseKoios            bool   `mapstructure:"use_koios"`
 }
 
 // rootCmd represents the base command when called without any subcommands
