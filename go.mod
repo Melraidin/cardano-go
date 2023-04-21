@@ -5,7 +5,7 @@ go 1.18
 require (
 	filippo.io/edwards25519 v1.0.0
 	github.com/blockfrost/blockfrost-go v0.1.0
-	github.com/cardano-community/koios-go-client/v2 v2.0.2
+	github.com/cardano-community/koios-go-client/v3 v3.1.2
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/echovl/ed25519 v0.2.0
 	github.com/matoous/go-nanoid/v2 v2.0.0
@@ -47,9 +47,9 @@ require (
 	github.com/subosito/gotenv v1.3.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
-	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/time v0.2.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
