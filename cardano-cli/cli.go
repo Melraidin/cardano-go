@@ -90,6 +90,13 @@ func (c *CardanoCli) runCommand(args ...string) (string, error) {
 	} else {
 		cmd = exec.CommandContext(c.ctx, "cardano-cli", args...)
 	}
+
+	if socketPath = getSocketPathToUse(); socketPath != "" {
+		cmd.Env = []string{
+			fmt.Sprintf("CARDANO_NODE_SOCKET_PATH=%s", socketPath),
+		}
+	}
+
 	cmd.Stdout = out
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
