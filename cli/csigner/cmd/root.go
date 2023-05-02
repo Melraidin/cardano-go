@@ -23,7 +23,7 @@ func Execute() {
 
 func init() {
 	// rootCmd.Flags().Bool("cip8", false, "Use CIP8 (COSE)")
-	// rootCmd.Flags().Bool("cip30", false, "Use CIP30 (COSE)")
+	rootCmd.Flags().Bool("cip30", false, "Use CIP30 (COSE)")
 	rootCmd.Flags().Bool("cip22", false, "Use CIP22 (VRF keys)")
 	rootCmd.Flags().String("data", "", "message to sign/verify")
 	rootCmd.Flags().String("nonce", "", "a lower-case hex string (optional)")

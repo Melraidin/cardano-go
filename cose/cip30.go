@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/safanaj/cardano-go/crypto"
 	"github.com/safanaj/cardano-go/internal/cbor"
 	"github.com/veraison/go-cose"
 )
@@ -60,6 +61,39 @@ func (k *COSEKey) MarshalCBOR() ([]byte, error) {
 		Kid: k.Kid,
 	}
 	return cbor.Marshal(rck)
+}
+
+func NewCOSEKeyFromBytes(key []byte) (*COSEKey, error) {
+	if len(key) != ed25519.PublicKeySize && len(key) != ed25519.PrivateKeySize {
+		return nil, fmt.Errorf("key is wrong size (expected %d or %d): %d", ed25519.PublicKeySize, ed25519.PrivateKeySize, len(key))
+	}
+
+	coseKey := &COSEKey{
+		Crv: uint64(6),
+		Kty: uint64(1),
+		Alg: int64(cose.AlgorithmEd25519),
+	}
+	copy(coseKey.Key.Bytes(), key)
+
+	var (
+		keyId []byte
+		err   error
+	)
+	if len(key) == ed25519.PublicKeySize {
+		keyId, err = crypto.PubKey(key).Hash()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		keyId, err = crypto.PrvKey(key).PubKey().Hash()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if keyId != nil {
+		copy(coseKey.Kid.Bytes(), keyId)
+	}
+	return coseKey, nil
 }
 
 func NewCOSEKeyFromCBORHex(cborHex string) (*COSEKey, error) {
