@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/cose"
 	"github.com/safanaj/cardano-go/crypto"
 	"github.com/safanaj/cardano-go/libsodium"
 	"github.com/spf13/cobra"
@@ -17,7 +18,7 @@ var signCmd = &cobra.Command{
 	Short: "Sign a message using a private/secret key",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// useCIP8, _ := cmd.Flags().GetBool("cip8")
-		// useCIP30, _ := cmd.Flags().GetBool("cip30")
+		useCIP30, _ := cmd.Flags().GetBool("cip30")
 		useCIP22, _ := cmd.Flags().GetBool("cip22")
 		data, _ := cmd.Flags().GetString("data")
 		nonce, _ := cmd.Flags().GetString("nonce")
@@ -64,6 +65,35 @@ var signCmd = &cobra.Command{
 			dataHashBytes := blake2b.Sum256(seedData)
 			sigBytes, rerr = libsodium.CryptoVrfProve(prvKeyBytes, dataHashBytes[:])
 			outPubKey = pubKeyCBORHex
+		} else if useCIP30 {
+			prvKey := crypto.PrvKey(prvKeyBytes)
+			kid, err := prvKey.PubKey().Hash()
+			if err != nil {
+				return fmt.Errorf("invalid private key: %v", err)
+			}
+			cosePrvKey, err := cose.NewCOSEKeyFromBytes(prvKeyBytes)
+			if err != nil {
+				return fmt.Errorf("invalid private key: %v", err)
+			}
+			cosePubKey, err := cose.NewCOSEKeyFromBytes(crypto.PrvKey(cosePrvKey.Key.Bytes()).PubKey())
+			if err != nil {
+				return fmt.Errorf("invalid private key: %v", err)
+			}
+			signer, err := cose.NewSignerFromCOSEKey(cosePrvKey)
+			if err != nil {
+				return fmt.Errorf("invalid private key: %v", err)
+			}
+			outPubKeyBytes, err := cosePubKey.MarshalCBOR()
+			if err != nil {
+				return fmt.Errorf("invalid private key: %v", err)
+			}
+			msgToSign := cose.NewCOSESign1MessageWithPayload(data, kid)
+			err = msgToSign.Sign(nil, nil, signer)
+			if err != nil {
+				return fmt.Errorf("unable to sign: %v", err)
+			}
+			sigBytes, rerr = msgToSign.MarshalCBOR()
+			outPubKey = hex.EncodeToString(outPubKeyBytes)
 		} else {
 			prvKey := crypto.PrvKey(prvKeyBytes)
 			sigBytes = prvKey.Sign([]byte(data))
