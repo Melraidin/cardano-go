@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	filippo.io/edwards25519 v1.0.0
+	github.com/blinklabs-io/gouroboros v0.37.0
 	github.com/blockfrost/blockfrost-go v0.1.0
 	github.com/cardano-community/koios-go-client/v3 v3.1.2
 	github.com/dgraph-io/badger/v3 v3.2103.2
@@ -16,7 +17,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/veraison/go-cose v1.0.0
 	github.com/x448/float16 v0.8.4
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503
 )
 
 require (
@@ -36,6 +37,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/klauspost/compress v1.12.3 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -49,7 +51,7 @@ require (
 	github.com/subosito/gotenv v1.3.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.2.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
