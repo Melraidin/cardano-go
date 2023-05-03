@@ -13,12 +13,11 @@ csigner: ./libsodium/_c_libsodium_built/libsodium.a
 	CGO_LDFLAGS=-L$(CURDIR)/libsodium/_c_libsodium_built \
 	$(GOBUILD) -o ./cli/build/$@ cli/$@/main.go
 
-cwallet:
+cwallet cpinger:
 	$(GOBUILD) -o ./cli/build/$@ cli/$@/main.go
 
-install: cwallet csigner
-	@cp ./cli/build/cwallet /usr/bin/
-	@cp ./cli/build/csigner /usr/bin/
+install: cwallet csigner cpinger
+	@for x in $^ ; do cp ./cli/build/$${x} /usr/local/bin/ ; done
 
 test:
 	$(GOTEST) $(go list ./... | grep -v libsodium | grep -v 'cli/')
