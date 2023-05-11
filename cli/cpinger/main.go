@@ -22,6 +22,10 @@ import (
 	koioscli "github.com/safanaj/cardano-go/koios"
 )
 
+var (
+	version string = "0.0.0"
+)
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:           "cardano-pinger",
@@ -29,6 +33,7 @@ var rootCmd = &cobra.Command{
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	RunE:          runE,
+	Version:       version,
 }
 
 func init() {
@@ -80,10 +85,12 @@ func runE(cmd *cobra.Command, args []string) error {
 	}
 	results := map[string]bool{}
 	resCh := make(chan result)
+	collectorDoneCh := make(chan struct{})
 	go func() {
 		for res := range resCh {
 			results[res.n] = res.r
 		}
+		close(collectorDoneCh)
 	}()
 
 	var wg sync.WaitGroup
@@ -101,6 +108,7 @@ func runE(cmd *cobra.Command, args []string) error {
 	}
 	wg.Wait()
 	close(resCh)
+	<-collectorDoneCh
 
 	for r, v := range results {
 		if v {
@@ -253,7 +261,9 @@ func discoverRelays(ctx context.Context, pool string) ([]string, error) {
 	}
 	node := koioscli.NewNode(cardano.Mainnet, ctx)
 	kc := node.(*koioscli.KoiosCli)
-	resp, err := kc.GetPoolInfo(ctx, poolId, nil)
+	opts := kc.NewRequestOptions()
+	opts.QuerySet("select", "relays")
+	resp, err := kc.GetPoolInfo(ctx, poolId, opts)
 	if err != nil {
 		return nil, err
 	}
