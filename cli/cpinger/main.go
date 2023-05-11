@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	version string = "0.0.0"
+	version string = "0.0.1"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -39,10 +39,13 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.Flags().String("node", "", "target node as <ip:port> or <dns:port>")
 	rootCmd.Flags().String("pool", "", "target pool as bech32 or hex")
-	rootCmd.Flags().Uint16P("count", "c", 1, "Pings count (default 1)")
-	rootCmd.Flags().DurationP("interval", "i", 1*time.Second, "Pings interval (default 1 second)")
-	rootCmd.Flags().Bool("tip", false, "")
+	rootCmd.Flags().Uint16P("count", "c", 1, "Pings count")
+	rootCmd.Flags().DurationP("interval", "i", 1*time.Second, "Pings interval")
+	rootCmd.Flags().Bool("tip", false, "query the relays also for the tip")
 	rootCmd.Flags().BoolP("verbose", "v", false, "")
+
+	rootCmd.Flags().Duration("connect-timeout", 1*time.Second, "connection timeout")
+	rootCmd.Flags().Duration("keepalive-timeout", 1*time.Second, "keep alive timeout")
 }
 
 func runE(cmd *cobra.Command, args []string) error {
@@ -52,6 +55,9 @@ func runE(cmd *cobra.Command, args []string) error {
 	interval, _ := cmd.Flags().GetDuration("interval")
 	alsoTip, _ := cmd.Flags().GetBool("tip")
 	verbose, _ := cmd.Flags().GetBool("verbose")
+
+	connTimeout, _ := cmd.Flags().GetDuration("connect-timeout")
+	kaTimeout, _ := cmd.Flags().GetDuration("keepalive-timeout")
 
 	targets := []string{}
 	if pool != "" {
@@ -98,7 +104,7 @@ func runE(cmd *cobra.Command, args []string) error {
 	for _, relay := range targets {
 		go func(relay string) {
 			defer wg.Done()
-			if err := checkNode(cmd.Context(), relay, count, interval, alsoTip, verbose); err != nil {
+			if err := checkNode(cmd.Context(), relay, count, interval, alsoTip, verbose, connTimeout, kaTimeout); err != nil {
 				fmt.Fprintf(os.Stderr, "Error for %s: %v\n", relay, err)
 				resCh <- result{n: relay, r: false}
 			} else {
@@ -163,11 +169,11 @@ type pingStats struct {
 
 const maxDuration = time.Duration(1<<63 - 1)
 
-func checkNode(ctx context.Context, address string, count uint16, interval time.Duration, alsoTip, verbose bool) error {
+func checkNode(ctx context.Context, address string, count uint16, interval time.Duration, alsoTip, verbose bool, connT, kaT time.Duration) error {
 	cookie := uint16(0)
 	waitResponse := make(chan pingResponse)
 	stats := pingStats{count: count}
-	conn, err := (&net.Dialer{Timeout: time.Second}).DialContext(ctx, "tcp", address)
+	conn, err := (&net.Dialer{Timeout: connT}).DialContext(ctx, "tcp", address)
 	if err != nil {
 		return err
 	}
@@ -178,7 +184,7 @@ func checkNode(ctx context.Context, address string, count uint16, interval time.
 		ouroboros.WithKeepAlive(true),
 		ouroboros.WithKeepAliveConfig(
 			keepalive.NewConfig(
-				keepalive.WithTimeout(time.Second),
+				keepalive.WithTimeout(kaT),
 				keepalive.WithPeriod(maxDuration),
 				keepalive.WithKeepAliveResponseFunc(func(c uint16) error {
 					if c != cookie {
