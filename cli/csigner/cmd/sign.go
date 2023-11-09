@@ -79,7 +79,7 @@ var signCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("invalid private key: %v", err)
 			}
-			signer, err := cose.NewSignerFromCOSEKey(cosePrvKey)
+			signer, err := cose.NewExtendedSignerFromCOSEKey(cosePrvKey)
 			if err != nil {
 				return fmt.Errorf("invalid private key: %v", err)
 			}
@@ -87,18 +87,21 @@ var signCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("invalid private key: %v", err)
 			}
-			msgToSign := cose.NewCOSESign1MessageWithPayload(data, kid)
+			_ = kid
+			msgToSign := cose.NewCOSESign1MessageWithPayload(data, nil /* kid */)
 			err = msgToSign.Sign(nil, nil, signer)
 			if err != nil {
 				return fmt.Errorf("unable to sign: %v", err)
 			}
 			sigBytes, rerr = msgToSign.MarshalCBOR()
 			outPubKey = hex.EncodeToString(outPubKeyBytes)
+
 		} else {
 			prvKey := crypto.PrvKey(prvKeyBytes)
 			sigBytes = prvKey.Sign([]byte(data))
 			outPubKey = prvKey.PubKey().String()
 		}
+
 		outSignature = hex.EncodeToString(sigBytes)
 		if rerr == nil {
 			if !outJson {
