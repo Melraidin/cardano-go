@@ -24,7 +24,6 @@ func getPublicKey(cmd *cobra.Command) ([]byte, bool, error) {
 	if vrfVKeyCborHex != "" {
 		useSodium = true
 		libsodium.Initialize_libsodium()
-		// vrfVKeyData := libsodium.GetVrfVKeyDataFromCborHex(vrfVKeyCborHex)
 		vrfVKeyData, err := cardano.GetBytesFromCBORHex(vrfVKeyCborHex)
 		if err != nil {
 			return nil, useSodium, err
@@ -64,7 +63,6 @@ func getPublicKey(cmd *cobra.Command) ([]byte, bool, error) {
 		if strings.HasPrefix(m["type"], "VrfVerificationKey_") {
 			useSodium = true
 			libsodium.Initialize_libsodium()
-			// vrfVKeyData := libsodium.GetVrfVKeyDataFromCborHex(m["cborHex"])
 			vrfVKeyData, err := cardano.GetBytesFromCBORHex(vrfVKeyCborHex)
 			if err != nil {
 				return nil, useSodium, err
@@ -73,7 +71,6 @@ func getPublicKey(cmd *cobra.Command) ([]byte, bool, error) {
 		}
 
 		cborData, err := hex.DecodeString(m["cborHex"])
-		// pubkeyData := make([]byte, 32)
 		var pubkeyData []byte
 		if err = cbor.Unmarshal(cborData, &pubkeyData); err != nil {
 			return nil, useSodium, err
@@ -104,7 +101,6 @@ func getPrivateKey(cmd *cobra.Command) ([]byte, bool, error) {
 	if vrfSKeyCborHex != "" {
 		useSodium = true
 		libsodium.Initialize_libsodium()
-		// vrfSKeyData := libsodium.GetVrfSKeyDataFromCborHex(vrfSKeyCborHex)
 		vrfSKeyData, err := cardano.GetBytesFromCBORHex(vrfSKeyCborHex)
 		if err != nil {
 			return nil, useSodium, err
@@ -144,7 +140,6 @@ func getPrivateKey(cmd *cobra.Command) ([]byte, bool, error) {
 		if strings.HasPrefix(m["type"], "VrfSigningKey_") {
 			useSodium = true
 			libsodium.Initialize_libsodium()
-			// vrfSKeyData := libsodium.GetVrfSKeyDataFromCborHex(m["cborHex"])
 			vrfSKeyData, err := cardano.GetBytesFromCBORHex(m["cborHex"])
 			if err != nil {
 				return nil, useSodium, err
@@ -153,7 +148,7 @@ func getPrivateKey(cmd *cobra.Command) ([]byte, bool, error) {
 		}
 
 		cborData, err := hex.DecodeString(m["cborHex"])
-		prvkeyData := make([]byte, 64)
+		var prvkeyData []byte
 		if err = cbor.Unmarshal(cborData, &prvkeyData); err != nil {
 			return nil, useSodium, err
 		}

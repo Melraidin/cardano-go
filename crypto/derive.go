@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"filippo.io/edwards25519"
-	"github.com/echovl/ed25519"
 )
 
 // Derive derives a children XPrv using BIP32-Ed25519
@@ -25,7 +24,7 @@ func (xsk XPrvKey) Derive(index uint32) XPrvKey {
 		ccmac.Write(xpriv)
 		ccmac.Write(sindex)
 	} else {
-		pub := ed25519.PublicKeyFrom(ed25519.ExtendedPrivateKey(xpriv))
+		pub := xsk.PubKey()
 		zmac.Write([]byte{0x2})
 		zmac.Write(pub)
 		zmac.Write(sindex)

@@ -1,9 +1,13 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 
+	coselib "github.com/veraison/go-cose"
+
+	"github.com/safanaj/cardano-go/cose"
 	"github.com/safanaj/cardano-go/crypto"
 	"github.com/safanaj/cardano-go/libsodium"
 	"github.com/spf13/cobra"
@@ -15,7 +19,7 @@ var verifyCmd = &cobra.Command{
 	Short: "Verify a signature of a message using a public key",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// useCIP8, _ := cmd.Flags().GetBool("cip8")
-		// useCIP30, _ := cmd.Flags().GetBool("cip30")
+		useCIP30, _ := cmd.Flags().GetBool("cip30")
 		useCIP22, _ := cmd.Flags().GetBool("cip22")
 		data, _ := cmd.Flags().GetString("data")
 		nonce, _ := cmd.Flags().GetString("nonce")
@@ -56,9 +60,13 @@ var verifyCmd = &cobra.Command{
 
 			dataHashBytes := blake2b.Sum256(seedData)
 			_, err = libsodium.CryptoVrfVerify(pubKeyBytes, sigBytes, dataHashBytes[:])
+		} else if useCIP30 {
+
+			_ = bytes.Equal
+			_ = coselib.HeaderLabelKeyID
+			err = cose.VerifyFromCBORHex(sig, hex.EncodeToString(pubKeyBytes))
 		} else {
 			pubKey := crypto.PubKey(pubKeyBytes)
-			// if pubKey.Verify([]byte(dataHex), sigBytes) {
 			if pubKey.Verify([]byte(data), sigBytes) {
 				err = nil
 			} else {
@@ -68,8 +76,6 @@ var verifyCmd = &cobra.Command{
 
 		if err == nil {
 			fmt.Println("success, signature verified")
-			// } else {
-			// 	fmt.Printf("failure, error: %v\n", err)
 		}
 		return err
 	},

@@ -1,6 +1,7 @@
 package cose
 
 import (
+	cryptolib "crypto"
 	"crypto/ed25519"
 	"encoding/hex"
 	"fmt"
@@ -72,27 +73,32 @@ func NewCOSEKeyFromBytes(key []byte) (*COSEKey, error) {
 		Crv: uint64(6),
 		Kty: uint64(1),
 		Alg: int64(cose.AlgorithmEd25519),
+		Key: cbor.NewByteString(key),
 	}
-	copy(coseKey.Key.Bytes(), key)
 
 	var (
 		keyId []byte
 		err   error
 	)
-	if len(key) == ed25519.PublicKeySize {
-		keyId, err = crypto.PubKey(key).Hash()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		keyId, err = crypto.PrvKey(key).PubKey().Hash()
-		if err != nil {
-			return nil, err
-		}
-	}
-	if keyId != nil {
-		copy(coseKey.Kid.Bytes(), keyId)
-	}
+
+	// if len(key) == ed25519.PublicKeySize {
+	// 	keyId, err = crypto.PubKey(key).Hash()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// } else {
+	// 	keyId, err = crypto.PrvKey(key).PubKey().Hash()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+	// if keyId != nil {
+	// 	// copy(coseKey.Kid.Bytes(), keyId)
+	// 	coseKey.Kid = cbor.NewByteString(keyId)
+	// }
+	_ = keyId
+	_ = err
+
 	return coseKey, nil
 }
 
@@ -157,25 +163,38 @@ func NewCOSESign1MessageWithPayload(payload string, kid []byte) *COSESign1Messag
 	return &COSESign1Message{sign1msg}
 }
 
-func NewSignerFromCOSEKey(key *COSEKey) (cose.Signer, error) {
+// //////////////////////////////////////////////////////////////
+// standard and extended hook to create a signer from COSEKey
+func ed25519_NewSignerFunc(key *COSEKey) cryptolib.Signer {
+	return crypto.PrvKey(key.Key.Bytes()).PrivateKey()
+}
+func ed25519e_NewSignerFunc(key *COSEKey) cryptolib.Signer {
+	return crypto.PrvKey(key.Key.Bytes()).ExtendedEd25519Signer()
+}
+
+// //////////////////////////////////////////////////////////////
+// generic signer factory
+
+func newSignerFromKey(key *COSEKey, doNewSigner func(key *COSEKey) cryptolib.Signer) (cose.Signer, error) {
 	if len(key.Key.Bytes()) != ed25519.PrivateKeySize {
 		return nil, fmt.Errorf("key is wrong size (expected: %d): %d", ed25519.PrivateKeySize, len(key.Key.Bytes()))
 	}
 	if cose.Algorithm(key.Alg) != cose.AlgorithmEd25519 {
 		return nil, fmt.Errorf("alg is wrong, not Ed25519 (value %v): %v", cose.AlgorithmEd25519, cose.Algorithm(key.Alg))
 	}
-	return cose.NewSigner(cose.AlgorithmEd25519, ed25519.PrivateKey(key.Key.Bytes()))
+	return cose.NewSigner(cose.AlgorithmEd25519, doNewSigner(key))
 }
-func NewSignerFromCBORHex(cborHex string) (cose.Signer, error) {
+
+func newSignerFromCBORHex(cborHex string, doNewSigner func(key *COSEKey) cryptolib.Signer) (cose.Signer, error) {
 	key, err := NewCOSEKeyFromCBORHex(cborHex)
 	if err != nil {
 		return nil, err
 	}
-	return NewSignerFromCOSEKey(key)
+	return newSignerFromKey(key, doNewSigner)
 }
 
-func SignPayloadWithKeyFromCBORHex(payload, key string) (string, error) {
-	signer, err := NewSignerFromCBORHex(key)
+func signPayloadWithKeyFromCBORHex(payload, key string, doNewSigner func(key *COSEKey) cryptolib.Signer) (string, error) {
+	signer, err := newSignerFromCBORHex(key, doNewSigner)
 	if err != nil {
 		return "", err
 	}
@@ -190,7 +209,7 @@ func SignPayloadWithKeyFromCBORHex(payload, key string) (string, error) {
 	return hex.EncodeToString(cborBytes), nil
 }
 
-func SignWithKey(payload, key []byte) (string, error) {
+func signWithKey(payload, key []byte, doNewSigner func(key *COSEKey) cryptolib.Signer) (string, error) {
 	if len(key) != ed25519.PrivateKeySize {
 		return "", fmt.Errorf("key is wrong size (expected: %d): %d", ed25519.PrivateKeySize, len(key))
 	}
@@ -200,10 +219,8 @@ func SignWithKey(payload, key []byte) (string, error) {
 		Alg: int64(cose.AlgorithmEd25519),
 	}
 	copy(coseKey.Key.Bytes(), key)
-	// keyId := ed25519.PrivateKey(key).prvKey.Public().(ed25519.PublicKey) // should be used as key id
-	// copy(coseKey.Kid, keyId)
 
-	signer, err := NewSignerFromCOSEKey(coseKey)
+	signer, err := newSignerFromKey(coseKey, doNewSigner)
 	if err != nil {
 		return "", err
 	}
@@ -218,6 +235,45 @@ func SignWithKey(payload, key []byte) (string, error) {
 	}
 	return hex.EncodeToString(cborBytes), nil
 }
+
+////////////////////////////////////////////////////////////////
+// ed25519 signer
+
+func NewSignerFromCOSEKey(key *COSEKey) (cose.Signer, error) {
+	return newSignerFromKey(key, ed25519_NewSignerFunc)
+}
+func NewSignerFromCBORHex(cborHex string) (cose.Signer, error) {
+	return newSignerFromCBORHex(cborHex, ed25519_NewSignerFunc)
+}
+
+func SignPayloadWithKeyFromCBORHex(payload, key string) (string, error) {
+	return signPayloadWithKeyFromCBORHex(payload, key, ed25519_NewSignerFunc)
+}
+
+func SignWithKey(payload, key []byte) (string, error) {
+	return signWithKey(payload, key, ed25519_NewSignerFunc)
+}
+
+// //////////////////////////////////////////////////////////////
+// extended signer (ed25519e)
+func NewExtendedSignerFromCOSEKey(key *COSEKey) (cose.Signer, error) {
+	return newSignerFromKey(key, ed25519e_NewSignerFunc)
+
+}
+func NewExtendedSignerFromCBORHex(cborHex string) (cose.Signer, error) {
+	return newSignerFromCBORHex(cborHex, ed25519e_NewSignerFunc)
+}
+
+func SignExtendedPayloadWithKeyFromCBORHex(payload, key string) (string, error) {
+	return signPayloadWithKeyFromCBORHex(payload, key, ed25519e_NewSignerFunc)
+}
+
+func SignExtendedWithKey(payload, key []byte) (string, error) {
+	return signWithKey(payload, key, ed25519e_NewSignerFunc)
+}
+
+////////////////////////////////////////////////////////////////
+// verifier
 
 func NewVerifierFromCOSEKey(key *COSEKey) (cose.Verifier, error) {
 	if len(key.Key.Bytes()) != ed25519.PublicKeySize {
@@ -245,98 +301,5 @@ func VerifyFromCBORHex(signature, key string) error {
 	if err != nil {
 		return err
 	}
-	return msgToVerify.Sign1Message.Verify(nil, verifier)
+	return msgToVerify.Verify(nil, verifier)
 }
-
-////////////////////////////////////////////////////////////////
-
-// const (
-// 	kCrvKey int64  = -1
-// 	kKeyKey int64  = -2
-// 	kKtyKey uint64 = 1
-// 	kKidKey uint64 = 2
-// 	kAlgKey uint64 = 3
-// )
-
-// func (k *COSEKey) UnmarshalCBOR_viaMap(data []byte) error {
-// 	var rck map[any]any
-// 	err := cbor.Unmarshal(data, &rck)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if vI, ok := rck[kCrvKey]; !ok {
-// 		return fmt.Errorf("crv key missing")
-// 	} else {
-// 		if v, ok := vI.(uint64); !ok {
-// 			return fmt.Errorf("crv key value is not a uint64: %T", vI)
-// 		} else if v != uint64(6) {
-// 			return fmt.Errorf("crv key is not Ed25519 (value 6): %v", v)
-// 		} else {
-// 			k.Crv = v
-// 		}
-// 	}
-
-// 	if vI, ok := rck[kKeyKey]; !ok {
-// 		return fmt.Errorf("key key missing")
-// 	} else {
-// 		if v, ok := vI.([]byte); !ok {
-// 			return fmt.Errorf("key key value is not a []byte: %T", vI)
-// 		} else {
-// 			if len(v) != ed25519.PublicKeySize && len(v) != ed25519.PrivateKeySize {
-// 				return fmt.Errorf("key is wrong size (expected %d or %d): %d", ed25519.PublicKeySize, ed25519.PrivateKeySize, len(v))
-// 			} else {
-// 				k.Key = make([]byte, len(v))
-// 				copy(k.Key, v)
-// 			}
-// 		}
-// 	}
-
-// 	if vI, ok := rck[kKtyKey]; !ok {
-// 		return fmt.Errorf("kty key missing")
-// 	} else {
-// 		if v, ok := vI.(uint64); !ok {
-// 			return fmt.Errorf("kty key value is not a uint64: %T", vI)
-// 		} else if v != uint64(1) {
-// 			return fmt.Errorf("kty key is not OKP (value 1): %v", v)
-// 		} else {
-// 			k.Kty = v
-// 		}
-// 	}
-
-// 	if vI, ok := rck[kAlgKey]; !ok {
-// 		return fmt.Errorf("alg key missing")
-// 	} else {
-// 		if v, ok := vI.(int64); !ok {
-// 			return fmt.Errorf("alg key value is not a int64: %T", vI)
-// 		} else if cose.Algorithm(v) != cose.AlgorithmEd25519 {
-// 			return fmt.Errorf("alg is wrong, not Ed25519 (value %v): %v", cose.AlgorithmEd25519, cose.Algorithm(v))
-// 		} else {
-// 			k.Alg = v
-// 		}
-// 	}
-
-// 	if vI, ok := rck[kKidKey]; ok {
-// 		if v, ok := vI.([]byte); !ok {
-// 			return fmt.Errorf("kid key value is not a []byte: %T", vI)
-// 		} else {
-// 			k.Kid = make([]byte, len(v))
-// 			copy(k.Kid, v)
-// 		}
-// 	}
-// 	return nil
-// }
-
-// func (k *COSEKey) MarshalCBOR_viaMap() ([]byte, error) {
-// 	rck := make(map[any]any)
-// 	rck[kCrvKey] = uint64(6)
-// 	rck[kKtyKey] = uint64(1)
-// 	rck[kAlgKey] = int64(cose.AlgorithmEd25519)
-// 	keyBuf := make([]byte, len(k.Key))
-// 	copy(keyBuf, k.Key)
-// 	rck[kKeyKey] = keyBuf
-// 	if k.Kid != nil {
-// 		kidBuf := make([]byte, len(k.Kid))
-// 		copy(kidBuf, k.Kid)
-// 		rck[kKidKey] = kidBuf
-// 	}
-// }
