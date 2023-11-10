@@ -47,7 +47,7 @@ func NewAddressFromBytes(bytes []byte) (Address, error) {
 	switch addr.Type {
 	case Base:
 		if len(bytes) != 57 {
-			return addr, errors.New("base address length should be 29")
+			return addr, errors.New("base address length should be 57")
 		}
 		addr.Payment = StakeCredential{
 			Type:    KeyCredential,
@@ -59,7 +59,7 @@ func NewAddressFromBytes(bytes []byte) (Address, error) {
 		}
 	case Base + 1:
 		if len(bytes) != 57 {
-			return addr, errors.New("base address length should be 29")
+			return addr, errors.New("base address length should be 57")
 		}
 		addr.Payment = StakeCredential{
 			Type:       ScriptCredential,
@@ -71,7 +71,7 @@ func NewAddressFromBytes(bytes []byte) (Address, error) {
 		}
 	case Base + 2:
 		if len(bytes) != 57 {
-			return addr, errors.New("base address length should be 29")
+			return addr, errors.New("base address length should be 57")
 		}
 		addr.Payment = StakeCredential{
 			Type:    KeyCredential,
@@ -83,7 +83,7 @@ func NewAddressFromBytes(bytes []byte) (Address, error) {
 		}
 	case Base + 3:
 		if len(bytes) != 57 {
-			return addr, errors.New("base address length should be 29")
+			return addr, errors.New("base address length should be 57")
 		}
 		addr.Payment = StakeCredential{
 			Type:       ScriptCredential,
