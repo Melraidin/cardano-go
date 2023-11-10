@@ -24,6 +24,7 @@ const (
 	addrType5  = "addr128phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtupnz75xxcrtw79hu"
 	addrType6  = "addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8"
 	addrType7  = "addr1w8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcyjy7wx"
+	addrType8  = "stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw"
 )
 
 var (
@@ -36,6 +37,7 @@ var (
 		"addr128phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtupnz75xxcrtw79hu",
 		"addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8",
 		"addr1w8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcyjy7wx",
+		"stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw",
 	}
 )
 
@@ -145,6 +147,89 @@ func TestNewAddress(t *testing.T) {
 	if got, want := enterprise1.Bech32(), addrType7; got != want {
 		t.Errorf("invalid enterprise address\ngot: %s\nwant: %s", got, want)
 	}
+
+	stake0, err := NewStakeAddress(Mainnet, stakeAddrCred)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := stake0.Bech32(), addrType8; got != want {
+		t.Errorf("invalid stake address\ngot: %s\nwant: %s", got, want)
+	}
+}
+
+func TestNewAddressFromBytesErrors(t *testing.T) {
+	// failing bech32 decoding
+	badAddr := []byte(addrType0)
+	badAddr[10] = 'Z'
+	_, err := NewAddress(string(badAddr))
+	if err == nil {
+		t.Errorf("error expected")
+	}
+
+	badAddr = make([]byte, 2)
+	for _, at := range []AddressType{Base, Ptr, Enterprise, Stake} {
+		badAddr[0] = byte(at) << 4
+		expectedErr := ""
+		switch at {
+		case Base:
+			expectedErr = "base address length should be 57"
+		case Ptr:
+			expectedErr = "pointer address length should be greater than 29"
+		case Enterprise:
+			expectedErr = "enterprise address length should be 29"
+		case Stake:
+			expectedErr = "stake address length should be 29"
+		}
+
+		if at == Base {
+			_, err = NewAddressFromBytes(badAddr)
+			if err == nil {
+				t.Errorf("error expected")
+			} else if err.Error() != expectedErr {
+				t.Errorf("error expected is different")
+			}
+
+			badAddr[0] = (byte(at) + 1) << 4
+			_, err = NewAddressFromBytes(badAddr)
+			if err == nil {
+				t.Errorf("error expected")
+			} else if err.Error() != expectedErr {
+				t.Errorf("error expected is different")
+			}
+
+			badAddr[0] = (byte(at) + 2) << 4
+			_, err = NewAddressFromBytes(badAddr)
+			if err == nil {
+				t.Errorf("error expected")
+			} else if err.Error() != expectedErr {
+				t.Errorf("error expected is different")
+			}
+
+			badAddr[0] = (byte(at) + 3) << 4
+			_, err = NewAddressFromBytes(badAddr)
+			if err == nil {
+				t.Errorf("error expected")
+			} else if err.Error() != expectedErr {
+				t.Errorf("error expected is different")
+			}
+		} else {
+			_, err = NewAddressFromBytes(badAddr)
+			if err == nil {
+				t.Errorf("error expected")
+			} else if err.Error() != expectedErr {
+				t.Errorf("error expected is different")
+			}
+
+			badAddr[0] = (byte(at) + 1) << 4
+			_, err = NewAddressFromBytes(badAddr)
+			if err == nil {
+				t.Errorf("error expected")
+			} else if err.Error() != expectedErr {
+				t.Errorf("error expected is different")
+			}
+		}
+	}
+
 }
 
 func TestNat(t *testing.T) {
