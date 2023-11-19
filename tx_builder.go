@@ -318,8 +318,9 @@ func (tb *TxBuilder) build() error {
 	tb.tx.WitnessSet.VKeyWitnessSet = make([]VKeyWitness, len(tb.pkeys))
 	for i, pkey := range tb.pkeys {
 		tb.tx.WitnessSet.VKeyWitnessSet[i] = VKeyWitness{
-			VKey:      pkey.PubKey(),
-			Signature: pkey.Sign(txHash),
+			VKey: pkey.PubKey(),
+			// for transaction we use Extended version of Sign method, not the ed25519 signing way
+			Signature: pkey.SignExtended(txHash),
 		}
 	}
 
