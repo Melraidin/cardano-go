@@ -5,8 +5,8 @@ import (
 	"math/big"
 
 	"github.com/cardano-community/koios-go-client/v3"
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/internal/cbor"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/internal/cbor"
 )
 
 const koiosTestnetHost = "testnet.koios.rest"

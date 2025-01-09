@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/safanaj/cardano-go/cli/cwallet/cmd"
+	"github.com/melraidin/cardano-go/cli/cwallet/cmd"
 )
 
 func main() {

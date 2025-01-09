@@ -1,8 +1,8 @@
 # cardano-go
 
-This is a fork / re-brand of https://github.com/echovl/cardano-go , this fork is just to continue to develop this library as the upstream / original developer seems has lost insterest.
+Forking from https://github.com/safanaj/cardano-go to add functionality to allow loading transactions built externally into a TxBuilder.
 
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/safanaj/cardano-go)](https://pkg.go.dev/github.com/safanaj/cardano-go) ![ci](https://github.com/safanaj/cardano-go/workflows/test/badge.svg)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/melraidin/cardano-go)](https://pkg.go.dev/github.com/melraidin/cardano-go) ![ci](https://github.com/melraidin/cardano-go/workflows/test/badge.svg)
 
 cardano-go is a library for creating go applications that interact with the Cardano Blockchain. [WIP]
 
@@ -11,7 +11,7 @@ This project is mainly used by me to serve https://f2lb.bardels.me/
 ## Installation
 
 ```
-$ go get github.com/safanaj/cardano-go
+$ go get github.com/melraidin/cardano-go
 ```
 
 ## Usage
@@ -24,9 +24,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/blockfrost"
-	// "github.com/safanaj/cardano-go/koios"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/blockfrost"
+	// "github.com/melraidin/cardano-go/koios"
 )
 
 func main() {
@@ -50,8 +50,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/crypto"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/crypto"
 )
 
 func main() {
@@ -98,7 +98,7 @@ func main() {
 package main
 
 import (
-	"github.com/safanaj/cardano-go"
+	"github.com/melraidin/cardano-go"
 )
 
 func main() {
@@ -121,9 +121,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/blockfrost"
-	// "github.com/safanaj/cardano-go/koios"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/blockfrost"
+	// "github.com/melraidin/cardano-go/koios"
 )
 
 func main() {
@@ -144,7 +144,7 @@ func main() {
 ```go
 package main
 
-import "github.com/safanaj/cardano-go"
+import "github.com/melraidin/cardano-go"
 
 func main() {
 	txBuilder := cardano.NewTxBuilder(&cardano.ProtocolParams{})
@@ -165,8 +165,8 @@ func main() {
 package main
 
 import (
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/crypto"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/crypto"
 )
 
 func main() {
@@ -192,8 +192,8 @@ func main() {
 package main
 
 import (
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/crypto"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/crypto"
 )
 
 func main() {
@@ -225,8 +225,8 @@ package main
 import (
 	"math/big"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/crypto"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/crypto"
 )
 
 func main() {
@@ -295,7 +295,7 @@ use_koios: false
 ### Installation
 
 ```
-$ git clone github.com/safanaj/cardano-go
+$ git clone github.com/melraidin/cardano-go
 $ make && sudo make install
 ```
 

@@ -14,7 +14,7 @@ import (
 
 	flag "github.com/spf13/pflag"
 
-	"github.com/safanaj/cardano-go"
+	"github.com/melraidin/cardano-go"
 )
 
 var socketPath, fallbackSocketPath string

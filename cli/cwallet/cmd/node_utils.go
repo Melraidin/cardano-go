@@ -3,10 +3,10 @@ package cmd
 import (
 	"context"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/blockfrost"
-	"github.com/safanaj/cardano-go/koios"
-	"github.com/safanaj/cardano-go/wallet"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/blockfrost"
+	"github.com/melraidin/cardano-go/koios"
+	"github.com/melraidin/cardano-go/wallet"
 )
 
 func getNode(ctx context.Context, n cardano.Network, c Config) cardano.Node {

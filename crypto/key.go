@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/pbkdf2"
 
-	"github.com/safanaj/cardano-go/internal/bech32"
+	"github.com/melraidin/cardano-go/internal/bech32"
 )
 
 // XPrvKey is the extended private key (64 bytes) appended with the chain code (32 bytes).

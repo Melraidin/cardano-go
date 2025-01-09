@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/safanaj/cardano-go/crypto"
+	"github.com/melraidin/cardano-go/crypto"
 	"golang.org/x/crypto/blake2b"
 )
 

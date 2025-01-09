@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/safanaj/cardano-go"
+	"github.com/melraidin/cardano-go"
 	"github.com/spf13/cobra"
 )
 
