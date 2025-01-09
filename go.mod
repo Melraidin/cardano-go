@@ -1,4 +1,4 @@
-module github.com/safanaj/cardano-go
+module github.com/melraidin/cardano-go
 
 go 1.18
 

@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	_ "github.com/otiai10/copy"
-	"github.com/safanaj/cardano-go"
+	"github.com/melraidin/cardano-go"
 	"golang.org/x/crypto/blake2b"
 )
 

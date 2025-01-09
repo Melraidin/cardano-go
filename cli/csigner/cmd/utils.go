@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/crypto"
-	"github.com/safanaj/cardano-go/internal/cbor"
-	"github.com/safanaj/cardano-go/libsodium"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/crypto"
+	"github.com/melraidin/cardano-go/internal/cbor"
+	"github.com/melraidin/cardano-go/libsodium"
 	"github.com/spf13/cobra"
 )
 

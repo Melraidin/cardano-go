@@ -3,8 +3,8 @@ package bech32
 import (
 	"fmt"
 
-	"github.com/safanaj/cardano-go/bech32/prefixes"
-	"github.com/safanaj/cardano-go/internal/bech32"
+	"github.com/melraidin/cardano-go/bech32/prefixes"
+	"github.com/melraidin/cardano-go/internal/bech32"
 )
 
 type Bech32Prefix = prefixes.Bech32Prefix

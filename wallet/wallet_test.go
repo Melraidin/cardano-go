@@ -3,8 +3,8 @@ package wallet
 import (
 	"testing"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/internal/bech32"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/internal/bech32"
 	"github.com/tyler-smith/go-bip39"
 )
 

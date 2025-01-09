@@ -17,9 +17,9 @@ import (
 	"github.com/blinklabs-io/gouroboros/protocol/keepalive"
 	"github.com/cardano-community/koios-go-client/v3"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/bech32"
-	koioscli "github.com/safanaj/cardano-go/koios"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/bech32"
+	koioscli "github.com/melraidin/cardano-go/koios"
 )
 
 var (

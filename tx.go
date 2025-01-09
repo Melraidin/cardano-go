@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/echovl/cardano-go/internal/cbor"
 
-	"github.com/safanaj/cardano-go/crypto"
+	"github.com/melraidin/cardano-go/crypto"
 	"golang.org/x/crypto/blake2b"
 )
 

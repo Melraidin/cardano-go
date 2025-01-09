@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/safanaj/cardano-go/internal/cbor"
+	"github.com/melraidin/cardano-go/internal/cbor"
 )
 
 var cborEnc, _ = cbor.CanonicalEncOptions().EncMode()

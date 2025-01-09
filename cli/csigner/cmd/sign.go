@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/safanaj/cardano-go"
-	"github.com/safanaj/cardano-go/cose"
-	"github.com/safanaj/cardano-go/crypto"
-	"github.com/safanaj/cardano-go/libsodium"
+	"github.com/melraidin/cardano-go"
+	"github.com/melraidin/cardano-go/cose"
+	"github.com/melraidin/cardano-go/crypto"
+	"github.com/melraidin/cardano-go/libsodium"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/blake2b"
 )
