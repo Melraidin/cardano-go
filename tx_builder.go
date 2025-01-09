@@ -31,6 +31,14 @@ func NewTxBuilder(protocol *ProtocolParams) *TxBuilder {
 	}
 }
 
+func NewTxBuilderFromTransaction(protocol *ProtocolParams, inputTx *Tx) *TxBuilder {
+	return &TxBuilder{
+		protocol: protocol,
+		pkeys:    []crypto.PrvKey{},
+		tx: inputTx,
+	}
+}
+
 // AddInputs adds inputs to the transaction.
 func (tb *TxBuilder) AddInputs(inputs ...*TxInput) {
 	tb.tx.Body.Inputs = append(tb.tx.Body.Inputs, inputs...)
@@ -92,7 +100,9 @@ func (tb *TxBuilder) AddChangeIfNeeded(changeAddr Address) {
 func (tb *TxBuilder) calculateAmounts() (*Value, *Value) {
 	input, output := NewValue(0), NewValue(tb.totalDeposits())
 	for _, in := range tb.tx.Body.Inputs {
-		input = input.Add(in.Amount)
+		if in.Amount != nil {
+			input = input.Add(in.Amount)
+		}
 	}
 	for _, out := range tb.tx.Body.Outputs {
 		output = output.Add(out.Amount)
@@ -209,28 +219,34 @@ func (tb *TxBuilder) Reset() {
 func (tb *TxBuilder) Build() (*Tx, error) {
 	inputAmount, outputAmount := tb.calculateAmounts()
 
-	// Check input-output value conservation
-	if tb.changeReceiver == nil {
-		totalProduced := outputAmount.Add(NewValue(tb.tx.Body.Fee))
-		if inputOutputCmp := totalProduced.Cmp(inputAmount); inputOutputCmp == 1 || inputOutputCmp == 2 {
-			return nil, fmt.Errorf(
-				"insufficient input in transaction, got %v want %v",
-				inputAmount,
-				totalProduced,
-			)
-		} else if inputOutputCmp == -1 {
-			return nil, fmt.Errorf(
-				"fee too small, got %v want %v",
-				tb.tx.Body.Fee,
-				inputAmount.Sub(totalProduced),
-			)
+	// If we don't have an input amount (this is the case when
+	// we're using an imported transaction from cardano-wallet
+	// with NewTxBuilderFromTransaction()) we have to assume the
+	// transaction was already built properly.
+	if !inputAmount.IsZero() {
+		// Check input-output value conservation
+		if tb.changeReceiver == nil {
+			totalProduced := outputAmount.Add(NewValue(tb.tx.Body.Fee))
+			if inputOutputCmp := totalProduced.Cmp(inputAmount); inputOutputCmp == 1 || inputOutputCmp == 2 {
+				return nil, fmt.Errorf(
+					"insufficient input in transaction, got %v want %v",
+					inputAmount,
+					totalProduced,
+				)
+			} else if inputOutputCmp == -1 {
+				return nil, fmt.Errorf(
+					"fee too small, got %v want %v",
+					tb.tx.Body.Fee,
+					inputAmount.Sub(totalProduced),
+				)
+			}
 		}
-	}
 
-	if tb.changeReceiver != nil {
-		err := tb.addChangeIfNeeded(inputAmount, outputAmount)
-		if err != nil {
-			return nil, err
+		if tb.changeReceiver != nil {
+			err := tb.addChangeIfNeeded(inputAmount, outputAmount)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
