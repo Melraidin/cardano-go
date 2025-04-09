@@ -16,6 +16,8 @@ const (
 	PoolRetirement
 	GenesisKeyDelegation
 	MoveInstantaneousRewards
+	StakeUndelegation
+	StakeAuthCommitteeHotCertificate
 )
 
 type stakeRegistration struct {
@@ -35,6 +37,30 @@ type stakeDelegation struct {
 	Type            CertificateType
 	StakeCredential StakeCredential
 	PoolKeyHash     PoolKeyHash
+}
+
+type stakeDelegationCredential struct {
+	_           struct{} `cbor:",toarray"`
+	Index       uint32
+	PoolKeyHash PoolKeyHash
+}
+
+type stakeAuthCommitteeHotCertificate struct {
+	_                         struct{} `cbor:",toarray"`
+	Type                      CertificateType
+	StakeDelegationCredential stakeDelegationCredential
+
+	// This appears to be a constant value from the protocol parameters.
+	KeyDeposit uint32
+}
+
+type stakeUndelegation struct {
+	_                         struct{} `cbor:",toarray"`
+	Type                      CertificateType
+	StakeDelegationCredential stakeDelegationCredential
+
+	// This appears to be a constant value from the protocol parameters.
+	KeyDeposit uint32
 }
 
 type poolRegistration struct {
@@ -75,15 +101,16 @@ type Certificate struct {
 	VrfKeyHash      Hash32
 
 	// Pool related fields
-	Operator      PoolKeyHash
-	Pledge        Coin
-	Margin        UnitInterval
-	RewardAccount Address
-	Owners        []AddrKeyHash
-	Relays        []Relay
-	PoolMetadata  *PoolMetadata // or null
-	Epoch         uint64
-
+	Operator                    PoolKeyHash
+	Pledge                      Coin
+	Margin                      UnitInterval
+	RewardAccount               Address
+	Owners                      []AddrKeyHash
+	Relays                      []Relay
+	PoolMetadata                *PoolMetadata // or null
+	Epoch                       uint64
+	AuthCommitteeHotCertificate *stakeAuthCommitteeHotCertificate
+	Undelegation                *stakeUndelegation
 	// Genesis fields
 	GenesisHash         Hash28
 	GenesisDelegateHash Hash28
@@ -108,6 +135,24 @@ func (c *Certificate) MarshalCBOR() ([]byte, error) {
 			Type:            c.Type,
 			StakeCredential: c.StakeCredential,
 			PoolKeyHash:     c.PoolKeyHash,
+		}
+	case StakeAuthCommitteeHotCertificate:
+		cert = stakeAuthCommitteeHotCertificate{
+			Type: c.Type,
+			StakeDelegationCredential: stakeDelegationCredential{
+				Index:       c.AuthCommitteeHotCertificate.StakeDelegationCredential.Index,
+				PoolKeyHash: c.AuthCommitteeHotCertificate.StakeDelegationCredential.PoolKeyHash,
+			},
+			KeyDeposit: c.AuthCommitteeHotCertificate.KeyDeposit,
+		}
+	case StakeUndelegation:
+		cert = stakeUndelegation{
+			Type: c.Type,
+			StakeDelegationCredential: stakeDelegationCredential{
+				Index:       c.Undelegation.StakeDelegationCredential.Index,
+				PoolKeyHash: c.Undelegation.StakeDelegationCredential.PoolKeyHash,
+			},
+			KeyDeposit: c.Undelegation.KeyDeposit,
 		}
 	case PoolRegistration:
 		cert = poolRegistration{
@@ -240,6 +285,20 @@ func (c *Certificate) UnmarshalCBOR(data []byte) error {
 		c.GenesisHash = cert.GenesisHash
 		c.GenesisDelegateHash = cert.GenesisDelegateHash
 		c.VrfKeyHash = cert.VrfKeyHash
+	case StakeAuthCommitteeHotCertificate:
+		cert := &stakeAuthCommitteeHotCertificate{}
+		if err := cborDec.Unmarshal(data, cert); err != nil {
+			return err
+		}
+		c.Type = StakeAuthCommitteeHotCertificate
+		c.AuthCommitteeHotCertificate = cert
+	case StakeUndelegation:
+		cert := &stakeUndelegation{}
+		if err := cborDec.Unmarshal(data, cert); err != nil {
+			return err
+		}
+		c.Type = StakeUndelegation
+		c.Undelegation = cert
 	}
 
 	return nil
