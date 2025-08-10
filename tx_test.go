@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"math/big"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/melraidin/cardano-go/crypto"
@@ -393,5 +394,156 @@ func TestTxDecoding(t *testing.T) {
 
 	if tx.Body.Fee != Coin(213505) {
 		t.Errorf("got: %d as fee\nwant: 213505", tx.Body.Fee)
+	}
+}
+
+func TestVKeyWitnessMarshalCBORWrapped(t *testing.T) {
+	// Create a test VKeyWitness
+	testPubKey := crypto.PubKey([]byte("test_public_key_32_bytes_long"))
+	testSignature := []byte("test_signature_64_bytes_long_")
+
+	vkeyWitness := VKeyWitness{
+		VKey:      testPubKey,
+		Signature: testSignature,
+	}
+
+	// Marshal the VKeyWitness using the wrapped MarshalCBOR function
+	marshaled, err := vkeyWitness.MarshalCBORWrapped()
+	if err != nil {
+		t.Fatalf("Failed to marshal VKeyWitness: %v", err)
+	}
+
+	// Verify that the marshaled data is not empty
+	if len(marshaled) == 0 {
+		t.Fatal("Marshaled VKeyWitness is empty")
+	}
+
+	// Try to unmarshal the data to verify it's valid CBOR
+	// The wrapper structure matches what MarshalCBORWrapped creates
+	var wrapper struct {
+		_           struct{} `cbor:",toarray"`
+		CLIConstant int      `cbor:"0,keyasint"`
+		VK          VKeyWitness
+	}
+
+	err = cbor.Unmarshal(marshaled, &wrapper)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal VKeyWitness wrapper: %v", err)
+	}
+
+	// Verify that the CLIConstant is 0 (as per the implementation)
+	if wrapper.CLIConstant != 0 {
+		t.Errorf("CLIConstant mismatch: got %d, want 0", wrapper.CLIConstant)
+	}
+
+	// Verify that the unmarshaled VKeyWitness matches the original
+	unmarshaledWitness := wrapper.VK
+	if !reflect.DeepEqual(unmarshaledWitness.VKey, testPubKey) {
+		t.Errorf("VKey mismatch: got %v, want %v", unmarshaledWitness.VKey, testPubKey)
+	}
+	if !reflect.DeepEqual(unmarshaledWitness.Signature, testSignature) {
+		t.Errorf("Signature mismatch: got %v, want %v", unmarshaledWitness.Signature, testSignature)
+	}
+
+	t.Logf("Successfully marshaled and unmarshaled VKeyWitness wrapped in CLI-compatible structure")
+	t.Logf("Marshaled size: %d bytes", len(marshaled))
+
+	// Additional verification: check that the CBOR structure is correct
+	// The expected structure is: [0, [vkey, signature]] where 0 is the CLIConstant
+	// and the second element is the VKeyWitness array
+	var rawData []interface{}
+	err = cbor.Unmarshal(marshaled, &rawData)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal as raw CBOR: %v", err)
+	}
+
+	if len(rawData) != 2 {
+		t.Fatalf("Expected 2 elements in CBOR array, got %d", len(rawData))
+	}
+
+	// First element should be 0 (CLIConstant)
+	if cliConstant, ok := rawData[0].(uint64); !ok || cliConstant != 0 {
+		t.Errorf("Expected first element to be 0, got %v", rawData[0])
+	}
+
+	// Second element should be the VKeyWitness array
+	if vkWitnessArray, ok := rawData[1].([]interface{}); !ok || len(vkWitnessArray) != 2 {
+		t.Errorf("Expected second element to be VKeyWitness array with 2 elements, got %v", rawData[1])
+	}
+}
+
+func TestTxBodyMarshalCBORWithTag258(t *testing.T) {
+	// Create a simple TxBody with one input
+	txHash, err := NewHash32("030858db80bf94041b7b1c6fbc0754a9bd7113ec9025b1157a9a4e02135f3518")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addr, err := NewAddress("addr_test1vp9uhllavnhwc6m6422szvrtq3eerhleer4eyu00rmx8u6c42z3v8")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	txBody := &TxBody{
+		Inputs: []*TxInput{
+			NewTxInput(txHash, 0, NewValue(1000000)),
+		},
+		Outputs: []*TxOutput{
+			NewTxOutput(addr, NewValue(900000)),
+		},
+		Fee: 100000,
+	}
+
+	// Marshal the TxBody to CBOR
+	cborBytes, err := txBody.MarshalCBOR()
+	if err != nil {
+		t.Fatalf("Failed to marshal TxBody: %v", err)
+	}
+
+	// Convert to hex for inspection
+	cborHex := hex.EncodeToString(cborBytes)
+	t.Logf("TxBody CBOR hex: %s", cborHex)
+
+	// The CBOR should start with tag 258 (d90102) for the Inputs array
+	// Expected format: a300d90102818258... where:
+	// a3 = map with 3 elements
+	// 00 = key 0 (Inputs)
+	// d90102 = tag 258
+	// 818258... = the actual input array
+	if len(cborHex) < 8 {
+		t.Fatalf("CBOR too short: %s", cborHex)
+	}
+
+	// Check that the Inputs field (key 0) is followed by tag 258
+	inputsKeyIndex := strings.Index(cborHex, "00")
+	if inputsKeyIndex == -1 {
+		t.Fatalf("Could not find Inputs key (00) in CBOR: %s", cborHex)
+	}
+
+	// The tag 258 should appear after the key
+	tag258Index := strings.Index(cborHex[inputsKeyIndex:], "d90102")
+	if tag258Index == -1 {
+		t.Fatalf("Could not find tag 258 (d90102) after Inputs key in CBOR: %s", cborHex)
+	}
+
+	t.Logf("Successfully verified CBOR tag 258 is applied to Inputs array")
+	t.Logf("Tag 258 found at position %d after Inputs key", tag258Index)
+
+	// Verify we can unmarshal the tagged CBOR back to a TxBody
+	var unmarshaledBody TxBody
+	err = cbor.Unmarshal(cborBytes, &unmarshaledBody)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal tagged CBOR back to TxBody: %v", err)
+	}
+
+	// Verify the unmarshaled data matches the original
+	if len(unmarshaledBody.Inputs) != len(txBody.Inputs) {
+		t.Errorf("Inputs count mismatch: got %d, want %d", len(unmarshaledBody.Inputs), len(txBody.Inputs))
+	}
+	if len(unmarshaledBody.Outputs) != len(txBody.Outputs) {
+		t.Errorf("Outputs count mismatch: got %d, want %d", len(unmarshaledBody.Outputs), len(txBody.Outputs))
+	}
+	if unmarshaledBody.Fee != txBody.Fee {
+		t.Errorf("Fee mismatch: got %d, want %d", unmarshaledBody.Fee, txBody.Fee)
 	}
 }

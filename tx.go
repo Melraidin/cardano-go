@@ -7,6 +7,7 @@ import (
 	"github.com/echovl/cardano-go/internal/cbor"
 
 	"github.com/melraidin/cardano-go/crypto"
+	"github.com/melraidin/cardano-go/internal/cbor"
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -82,6 +83,21 @@ type VKeyWitness struct {
 	_         struct{}      `cbor:",toarray"`
 	VKey      crypto.PubKey // ed25519 public key
 	Signature []byte        // ed25519 signature
+}
+
+// MarshalCBORWrapped wraps the VKeyWitness so that the CBOR structure matches what cardano-cli
+// generates when witnessing a transaction.
+func (vk *VKeyWitness) MarshalCBORWrapped() ([]byte, error) {
+	// It's not clear what the 0 represents in this structure but cardano-cli does it so we
+	// do too.
+	wrapper := struct {
+		_           struct{} `cbor:",toarray"`
+		CLIConstant int      `cbor:"0,keyasint"`
+		VK          VKeyWitness
+	}{
+		VK: *vk,
+	}
+	return cborEnc.Marshal(wrapper)
 }
 
 // TxInput is the transaction input.
@@ -322,6 +338,57 @@ type TxBody struct {
 	CollateralReturn      *TxOutput     `cbor:"16,keyasint,omitempty"`
 	TotalCollateral       Coin          `cbor:"17,keyasint,omitempty"`
 	ReferenceInputs       []*TxInput    `cbor:"18,keyasint,omitempty"`
+}
+
+// MarshalCBOR implements cbor.Marshaler for TxBody.
+// It applies CBOR tag 258 to the Inputs array to match cardano-cli output format.
+func (body *TxBody) MarshalCBOR() ([]byte, error) {
+	// Create a custom structure that will be marshaled with the tagged inputs
+	type taggedTxBody struct {
+		Inputs                cbor.Tag      `cbor:"0,keyasint"`
+		Outputs               []*TxOutput   `cbor:"1,keyasint"`
+		Fee                   Coin          `cbor:"2,keyasint"`
+		TTL                   Uint64        `cbor:"3,keyasint,omitempty"`
+		Certificates          []Certificate `cbor:"4,keyasint,omitempty"`
+		Withdrawals           interface{}   `cbor:"5,keyasint,omitempty"`
+		Update                interface{}   `cbor:"6,keyasint,omitempty"`
+		AuxiliaryDataHash     *Hash32       `cbor:"7,keyasint,omitempty"`
+		ValidityIntervalStart Uint64        `cbor:"8,keyasint,omitempty"`
+		Mint                  *Mint         `cbor:"9,keyasint,omitempty"`
+		ScriptDataHash        *Hash32       `cbor:"11,keyasint,omitempty"`
+		Collateral            []*TxInput    `cbor:"13,keyasint,omitempty"`
+		RequiredSigners       []AddrKeyHash `cbor:"14,keyasint,omitempty"`
+		NetworkID             Uint64        `cbor:"15,keyasint,omitempty"`
+		CollateralReturn      *TxOutput     `cbor:"16,keyasint,omitempty"`
+		TotalCollateral       Coin          `cbor:"17,keyasint,omitempty"`
+		ReferenceInputs       []*TxInput    `cbor:"18,keyasint,omitempty"`
+	}
+
+	// Create the tagged structure with tag 258 for Inputs
+	tagged := taggedTxBody{
+		Inputs: cbor.Tag{
+			Number:  258,
+			Content: body.Inputs,
+		},
+		Outputs:               body.Outputs,
+		Fee:                   body.Fee,
+		TTL:                   body.TTL,
+		Certificates:          body.Certificates,
+		Withdrawals:           body.Withdrawals,
+		Update:                body.Update,
+		AuxiliaryDataHash:     body.AuxiliaryDataHash,
+		ValidityIntervalStart: body.ValidityIntervalStart,
+		Mint:                  body.Mint,
+		ScriptDataHash:        body.ScriptDataHash,
+		Collateral:            body.Collateral,
+		RequiredSigners:       body.RequiredSigners,
+		NetworkID:             body.NetworkID,
+		CollateralReturn:      body.CollateralReturn,
+		TotalCollateral:       body.TotalCollateral,
+		ReferenceInputs:       body.ReferenceInputs,
+	}
+
+	return cborEnc.Marshal(tagged)
 }
 
 // Hash returns the transaction body hash using blake2b256.
