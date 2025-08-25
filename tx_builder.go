@@ -35,7 +35,7 @@ func NewTxBuilderFromTransaction(protocol *ProtocolParams, inputTx *Tx) *TxBuild
 	return &TxBuilder{
 		protocol: protocol,
 		pkeys:    []crypto.PrvKey{},
-		tx: inputTx,
+		tx:       inputTx,
 	}
 }
 
@@ -221,6 +221,16 @@ func (tb *TxBuilder) Reset() {
 	tb.changeReceiver = nil
 }
 
+// BuildWithoutValidation returns a new transaction without any
+// attempt to validate the transaction is balanced.
+func (tb *TxBuilder) BuildWithoutValidation() (*Tx, error) {
+	if err := tb.build(); err != nil {
+		return nil, err
+	}
+
+	return tb.tx, nil
+}
+
 // Build returns a new transaction using the inputs, outputs and keys provided.
 func (tb *TxBuilder) Build() (*Tx, error) {
 	inputAmount, outputAmount := tb.calculateAmounts()
@@ -256,11 +266,7 @@ func (tb *TxBuilder) Build() (*Tx, error) {
 		}
 	}
 
-	if err := tb.build(); err != nil {
-		return nil, err
-	}
-
-	return tb.tx, nil
+	return tb.BuildWithoutValidation()
 }
 
 func (tb *TxBuilder) addChangeIfNeeded(inputAmount, outputAmount *Value) error {
