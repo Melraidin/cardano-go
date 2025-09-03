@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	cborv2 "github.com/fxamacker/cbor/v2"
 	"github.com/melraidin/cardano-go/crypto"
 	"github.com/melraidin/cardano-go/internal/cbor"
 	"golang.org/x/crypto/blake2b"
@@ -276,6 +277,12 @@ func (t TxOutput) String() string {
 }
 
 type TxBody struct {
+	// This is used to store the raw CBOR bytes of the transaction body in case the transaction was
+	// generated externally. This allows avoiding issues with unmarshalling and then marshalling
+	// again causing changes to the transaction body (e.g., from keys being ordered differently in
+	// a map).
+	WrappedTxBody []byte `cbor:"-"`
+
 	Inputs  []*TxInput  `cbor:"0,keyasint"`
 	Outputs []*TxOutput `cbor:"1,keyasint"`
 	Fee     Coin        `cbor:"2,keyasint"`
@@ -348,8 +355,34 @@ func (body *TxBody) MarshalCBOR() ([]byte, error) {
 	return cborEnc.Marshal(tagged)
 }
 
+// FirstElemRaw returns the raw CBOR bytes of the first element
+// of a CBOR-encoded array, without re-marshaling.
+func FirstElemRaw(cborData []byte) ([]byte, error) {
+	var elems []cbor.RawMessage
+	if err := cborv2.Unmarshal(cborData, &elems); err != nil {
+		return nil, fmt.Errorf("decode array: %w", err)
+	}
+	if len(elems) == 0 {
+		return nil, fmt.Errorf("empty CBOR array")
+	}
+
+	return elems[0], nil
+}
+
 // Hash returns the transaction body hash using blake2b256.
 func (body *TxBody) Hash() (Hash32, error) {
+	if len(body.WrappedTxBody) != 0 {
+		// The actual transaction body is the first element in the wrapped body. This allows us to
+		// avoid unmarshalling the transaction body, leaving it as just a byte slice.
+		rawTxBody, err := FirstElemRaw(body.WrappedTxBody)
+		if err != nil {
+			return Hash32{}, fmt.Errorf("failed to get first element raw: %w", err)
+		}
+
+		hash := blake2b.Sum256(rawTxBody)
+		return hash[:], nil
+	}
+
 	bytes, err := cborEnc.Marshal(body)
 	if err != nil {
 		return Hash32{}, err

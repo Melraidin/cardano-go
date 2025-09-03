@@ -231,6 +231,10 @@ func (tb *TxBuilder) BuildWithoutValidation() (*Tx, error) {
 	return tb.tx, nil
 }
 
+func (tb *TxBuilder) SetWrappedTxBody(wrappedTxBody []byte) {
+	tb.tx.Body.WrappedTxBody = wrappedTxBody
+}
+
 // Build returns a new transaction using the inputs, outputs and keys provided.
 func (tb *TxBuilder) Build() (*Tx, error) {
 	inputAmount, outputAmount := tb.calculateAmounts()
