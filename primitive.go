@@ -31,7 +31,7 @@ func (n Network) String() string {
 	}
 }
 
-type BigNum uint64
+type BigNum int64
 
 // Coin represents the Cardano Native Token, in Lovelace.
 type Coin BigNum
@@ -436,11 +436,10 @@ func (m *Mint) MultiAsset() *MultiAsset {
 	for policy, mintAssets := range m.m {
 		assets := NewAssets()
 		for assetName, value := range mintAssets.m {
-			posVal := value.Abs(value)
-			if posVal.IsUint64() {
-				assets.m[assetName] = BigNum(posVal.Uint64())
+			if value.IsInt64() {
+				assets.m[assetName] = BigNum(value.Int64())
 			} else {
-				panic("MintAsset value cannot be represented as a uint64")
+				panic("MintAsset value cannot be represented as an int64")
 			}
 		}
 		ma.m[policy] = assets
