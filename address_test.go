@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/echovl/cardano-go/byron"
+	"github.com/melraidin/cardano-go/byron"
 	"github.com/tyler-smith/go-bip39"
 	"testing"
 

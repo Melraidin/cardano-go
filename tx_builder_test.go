@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/echovl/cardano-go/internal/cbor"
+	"github.com/melraidin/cardano-go/internal/cbor"
 	"math/big"
 	"testing"
 

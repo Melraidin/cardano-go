@@ -6,8 +6,11 @@ require (
 	filippo.io/edwards25519 v1.0.0
 	github.com/blinklabs-io/gouroboros v0.62.0
 	github.com/blockfrost/blockfrost-go v0.1.1
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/cardano-community/koios-go-client/v3 v3.1.2
 	github.com/dgraph-io/badger/v3 v3.2103.5
+	github.com/echovl/ed25519 v0.2.0
+	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/otiai10/copy v1.14.0
 	github.com/spf13/cobra v1.8.0
@@ -25,7 +28,6 @@ require (
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/fxamacker/cbor/v2 v2.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.1.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect

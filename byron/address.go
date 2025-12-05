@@ -3,10 +3,11 @@ package byron
 import (
 	"errors"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/echovl/cardano-go/crypto"
-	"github.com/echovl/cardano-go/internal/cbor"
 	"hash/crc32"
+
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/melraidin/cardano-go/crypto"
+	"github.com/melraidin/cardano-go/internal/cbor"
 )
 
 var (

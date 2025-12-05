@@ -4,8 +4,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"fmt"
-	"github.com/echovl/cardano-go/crypto"
-	"github.com/echovl/cardano-go/internal/cbor"
+	"github.com/melraidin/cardano-go/crypto"
+	"github.com/melraidin/cardano-go/internal/cbor"
 	"golang.org/x/crypto/blake2b"
 )
 

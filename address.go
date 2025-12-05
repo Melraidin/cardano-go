@@ -3,10 +3,11 @@ package cardano
 import (
 	_bytes "bytes"
 	"errors"
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/echovl/cardano-go/byron"
 	"math/big"
 	"strings"
+
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/melraidin/cardano-go/byron"
 
 	"github.com/melraidin/cardano-go/internal/bech32"
 	"github.com/melraidin/cardano-go/internal/cbor"
@@ -48,16 +49,17 @@ func NewAddress(raw string) (Address, error) {
 
 func NewLegacyAddress(raw string) (Address, error) {
 	var data []byte = base58.Decode(raw)
-	//fmt.Println("hex.NewLegacyAddress", hex.EncodeToString(data))
+
 	return NewLegacyAddressFromBytes(data)
 }
 
 func NewLegacyAddressFromBytes(bytes []byte) (Address, error) {
 	var byronAddr byron.ByronAddress
+
 	if err := cbor.Unmarshal(bytes, &byronAddr); err != nil {
-		//log.Println(err)
 		return Address{}, err
 	}
+
 	return Address{ByronAddr: &byronAddr}, nil
 }
 
@@ -221,19 +223,11 @@ func (addr Address) MarshalCBOR() ([]byte, error) {
 }
 
 // UnmarshalCBOR implements cbor.Unmarshaler.
-func (addr Address) UnmarshalCBOR(data []byte) error {
-	if _bytes.Equal(data[:4], []byte{130, 216, 24, 88}) {
-		decoded, err := NewLegacyAddressFromBytes(data)
-		if err != nil {
-			return err
-		}
-		addr.ByronAddr = decoded.ByronAddr
-		return nil
-	}
+func (addr *Address) UnmarshalCBOR(data []byte) error {
 
 	bytes := []byte{}
 	if err := cborDec.Unmarshal(data, &bytes); err != nil {
-		return nil
+		return err
 	}
 	decoded, err := NewAddressFromBytes(bytes)
 	if err != nil {
@@ -245,6 +239,7 @@ func (addr Address) UnmarshalCBOR(data []byte) error {
 	addr.Payment = decoded.Payment
 	addr.Stake = decoded.Stake
 	addr.Pointer = decoded.Pointer
+	addr.ByronAddr = decoded.ByronAddr
 
 	return nil
 }

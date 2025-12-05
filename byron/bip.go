@@ -2,7 +2,7 @@ package byron
 
 import (
 	"crypto/sha512"
-	"github.com/echovl/cardano-go/internal/cbor"
+	"github.com/melraidin/cardano-go/internal/cbor"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/pbkdf2"
 )

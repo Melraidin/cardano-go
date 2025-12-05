@@ -2,9 +2,7 @@ package cardano
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
-	"github.com/echovl/cardano-go/internal/cbor"
 
 	cborv2 "github.com/fxamacker/cbor/v2"
 	"github.com/melraidin/cardano-go/crypto"
@@ -119,11 +117,6 @@ func (t TxInput) String() string {
 	return fmt.Sprintf("{TxHash: %v, Index: %v, Amount: %v}", t.TxHash, t.Index, t.Amount)
 }
 
-// TxOutput is the transaction output.
-type TxOutput struct {
-	TxBabbageOutput
-}
-
 // DatumType
 type DatumType int
 
@@ -157,41 +150,6 @@ type TxLegacyOutput struct {
 	Amount  *Value
 }
 
-func (o *TxOutput) MarshalCBOR() ([]byte, error) {
-	return cbor.Marshal([]interface{}{o.Address.Bytes(), o.Amount})
-}
-
-func (o *TxOutput) UnmarshalCBOR(data []byte) error {
-	if o == nil {
-		return errors.New("unmarshal to nil output")
-	}
-
-	type Raw struct {
-		_          struct{} `cbor:",toarray"`
-		RawAddress []byte
-		RawAmount  cbor.RawMessage
-	}
-	var raw Raw
-	if err := cbor.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-
-	addr, err := NewAddressFromBytes(raw.RawAddress)
-	if err != nil {
-		return err
-	}
-
-	if len(raw.RawAmount) == 0 {
-		return errors.New("no raw amount cbor bytes")
-	}
-	var amount Value
-	if err := cbor.Unmarshal(raw.RawAmount, &amount); err != nil {
-		return err
-	}
-	o.Amount = &amount
-	o.Address = addr
-	return nil
-=======
 type TxAlonzoOutput struct {
 	_         struct{} `cbor:",toarray"`
 	Address   Address
@@ -212,7 +170,6 @@ type TxBabbageOutput struct {
 // TxOutput is the transaction output after alonzo, in babbage era.
 type TxOutput struct {
 	TxBabbageOutput
->>>>>>> 62f1c00 (added suport for tx output in alonzo and babbage era, close #1)
 }
 
 // NewTxOutput creates a new instance of TxOutput
@@ -245,6 +202,7 @@ func (t *TxOutput) UnmarshalCBOR(data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}
+
 	// should we check for arbitrary long container types, like 0xbf (map) or 0x9f (list) ?
 	switch data[0] & 0xf0 {
 	case 0xa0:
@@ -254,6 +212,7 @@ func (t *TxOutput) UnmarshalCBOR(data []byte) error {
 		if err != nil {
 			return err
 		}
+
 		t.Address = rto.Address
 		t.Amount = rto.Amount
 		t.DatumOption = rto.DatumOption
@@ -281,11 +240,16 @@ func (t *TxOutput) UnmarshalCBOR(data []byte) error {
 			t.Amount = lto.Amount
 		}
 	}
+
 	return nil
 }
 
 // MarshalCBOR implements cbor.Marshaler.
 func (t *TxOutput) MarshalCBOR() ([]byte, error) {
+	if t.Address.ByronAddr != nil {
+		return cbor.Marshal([]interface{}{t.Address.Bytes(), t.Amount})
+	}
+
 	// we want to minimize the output length, so prefer legacy, alonzo, babbage
 	if t.ScriptRef != nil {
 		// we need full babbage output

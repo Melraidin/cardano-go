@@ -2,7 +2,6 @@ package cardano
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/melraidin/cardano-go/crypto"
 	"golang.org/x/crypto/blake2b"
