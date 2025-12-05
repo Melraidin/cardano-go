@@ -397,6 +397,27 @@ func TestTxDecoding(t *testing.T) {
 	}
 }
 
+func TestTxDecodingByron(t *testing.T) {
+	txCborHex := "84a500d90102818258207a816013add65e308621e707f154a4f36d96de511b8c85697b39e3c5c8b9cd2701018282584f82d818584583581c999a38b535595353cdd39ca027972a258fd16aa331ff2fe212c83ea3a201581e581cd0ae64e838e70504b0d7a9d7109edec1f51e5121255d8eea3a879e5a024102001a07f4baa71a0012287082583900b37ae0cfbdd8f1bf493fb81083ae9d8e82b75a55c0913a0f4a77f3b278b985e6366e68a2620499d8d62832471bf29eab5b77b3dfb21be5801b00000002536b1cd8021a00029679031a05dc04f70800a0f5f6"
+	txCborBytes, _ := hex.DecodeString(txCborHex)
+	tx := &Tx{}
+	err := cbor.Unmarshal(txCborBytes, &tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if tx.Body.Outputs[0].Address.ByronAddr == nil {
+		t.Error("got: nil byron address on first output\nwant: a byron address")
+	}
+
+	if len(tx.Body.Inputs) != 1 {
+		t.Errorf("got: %d inputs\nwant: 1", len(tx.Body.Inputs))
+	}
+	if len(tx.Body.Outputs) != 2 {
+		t.Errorf("got: %d outputs\nwant: 2", len(tx.Body.Outputs))
+	}
+}
+
 func TestVKeyWitnessMarshalCBORWrapped(t *testing.T) {
 	// Create a test VKeyWitness
 	testPubKey := crypto.PubKey([]byte("test_public_key_32_bytes_long"))

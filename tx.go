@@ -243,6 +243,10 @@ func (t *TxOutput) UnmarshalCBOR(data []byte) error {
 
 // MarshalCBOR implements cbor.Marshaler.
 func (t *TxOutput) MarshalCBOR() ([]byte, error) {
+	if t.Address.ByronAddr != nil {
+		return cbor.Marshal([]interface{}{t.Address.Bytes(), t.Amount})
+	}
+
 	// we want to minimize the output length, so prefer legacy, alonzo, babbage
 	if t.ScriptRef != nil {
 		// we need full babbage output

@@ -6,8 +6,11 @@ require (
 	filippo.io/edwards25519 v1.0.0
 	github.com/blinklabs-io/gouroboros v0.62.0
 	github.com/blockfrost/blockfrost-go v0.1.1
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/cardano-community/koios-go-client/v3 v3.1.2
 	github.com/dgraph-io/badger/v3 v3.2103.5
+	github.com/echovl/ed25519 v0.2.0
+	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/otiai10/copy v1.14.0
 	github.com/spf13/cobra v1.8.0

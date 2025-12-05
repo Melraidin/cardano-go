@@ -8,6 +8,8 @@ import (
 	"io"
 	"strconv"
 
+	"golang.org/x/crypto/sha3"
+
 	"filippo.io/edwards25519"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/pbkdf2"
@@ -22,6 +24,11 @@ type XPrvKey []byte
 func NewXPrvKey(bech string) (XPrvKey, error) {
 	_, xsk, err := bech32.DecodeToBase256(bech)
 	return xsk, err
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/crypto.rs#L123
+func FromBip39Entropy(entropy []byte, password []byte) XPrvKey {
+	return NewXPrvKeyFromEntropy(entropy, string(password))
 }
 
 func NewXPrvKeyFromEntropy(entropy []byte, password string) XPrvKey {
@@ -262,4 +269,9 @@ func blake224Hash(b []byte) ([]byte, error) {
 		return nil, err
 	}
 	return hash.Sum(nil), err
+}
+
+func Sha3AndBlake2b224(raw []byte) ([]byte, error) {
+	res := sha3.Sum256(raw)
+	return blake224Hash(res[:])
 }
