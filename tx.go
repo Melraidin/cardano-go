@@ -202,7 +202,6 @@ func (t *TxOutput) UnmarshalCBOR(data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}
-
 	// should we check for arbitrary long container types, like 0xbf (map) or 0x9f (list) ?
 	switch data[0] & 0xf0 {
 	case 0xa0:
@@ -212,7 +211,6 @@ func (t *TxOutput) UnmarshalCBOR(data []byte) error {
 		if err != nil {
 			return err
 		}
-
 		t.Address = rto.Address
 		t.Amount = rto.Amount
 		t.DatumOption = rto.DatumOption
@@ -240,7 +238,6 @@ func (t *TxOutput) UnmarshalCBOR(data []byte) error {
 			t.Amount = lto.Amount
 		}
 	}
-
 	return nil
 }
 

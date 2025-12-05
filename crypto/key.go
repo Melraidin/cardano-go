@@ -5,9 +5,10 @@ import (
 	"crypto/ed25519"
 	"crypto/sha512"
 	"encoding/hex"
-	"golang.org/x/crypto/sha3"
 	"io"
 	"strconv"
+
+	"golang.org/x/crypto/sha3"
 
 	"filippo.io/edwards25519"
 	"golang.org/x/crypto/blake2b"
@@ -25,7 +26,7 @@ func NewXPrvKey(bech string) (XPrvKey, error) {
 	return xsk, err
 }
 
-//implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/crypto.rs#L123
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/crypto.rs#L123
 func FromBip39Entropy(entropy []byte, password []byte) XPrvKey {
 	return NewXPrvKeyFromEntropy(entropy, string(password))
 }

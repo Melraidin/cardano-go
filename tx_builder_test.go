@@ -4,9 +4,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/melraidin/cardano-go/internal/cbor"
 	"math/big"
 	"testing"
+
+	"github.com/melraidin/cardano-go/internal/cbor"
 
 	"github.com/melraidin/cardano-go/crypto"
 )
@@ -568,37 +569,36 @@ func TestAddChangeIfNeeded(t *testing.T) {
 	}
 }
 
-func TestMinCoins(t *testing.T)  {
+func TestMinCoins(t *testing.T) {
 	txBuilder := NewTxBuilder(alonzoProtocol)
 	addr, _ := NewAddress("DdzFFzCqrht7FAf8MpryP1p8sgkmFRUnDpifnnu4ZxpBjbCTSDwJVAaDsDqrC7SLYFx8fUrDcNNsD4AMiUgg2wGywTVpcfB1F3AHrGkv")
-
 
 	name, _ := hex.DecodeString("4d494e")
 	policyHash, _ := NewHash28("29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c6")
 	assetName := NewAssetName(string(name))
 	policyId := NewPolicyIDFromHash(policyHash)
 
-	asset := NewMultiAsset().Set(policyId,  NewAssets().Set(assetName, BigNum(5000000)))
+	asset := NewMultiAsset().Set(policyId, NewAssets().Set(assetName, BigNum(5000000)))
 	name, _ = hex.DecodeString("69555344")
 	policyHash, _ = NewHash28("f66d78b4a3cb3d37afa0ec36461e51ecbde00f26c8f0a68f94b69880")
 	assetName = NewAssetName(string(name))
 	policyId = NewPolicyIDFromHash(policyHash)
-	asset.Set(policyId,  NewAssets().Set(assetName, BigNum(100000)))
+	asset.Set(policyId, NewAssets().Set(assetName, BigNum(100000)))
 
 	//asset = nil
 	_ = asset
 	output := NewTxOutput(addr,
 		NewValue(Coin(1000000)),
-		//NewValueWithAssets(Coin(1200000), asset),
-		)
+	//NewValueWithAssets(Coin(1200000), asset),
+	)
 	fmt.Println(txBuilder.MinCoinsForTxOut(output))
 }
 
-func TestTxOut(t *testing.T)  {
-	testData := []struct{
+func TestTxOut(t *testing.T) {
+	testData := []struct {
 		address string
-		amount uint64
-		want string
+		amount  uint64
+		want    string
 	}{
 		{
 			address: "addr_test1qqth544yyqh8ahg0899ms59emls89cs9l9ra0n9nlrwtgahppgsq2ykgpqpgewlkwkyhsqn29k8dxp7xthncvfwht9kqdaq2fy",
@@ -636,7 +636,7 @@ func TestTxOut(t *testing.T)  {
 	}
 }
 
-func TestTxOutWithAsset(t *testing.T)  {
+func TestTxOutWithAsset(t *testing.T) {
 	var testdata = []struct {
 		address     string
 		amount      uint64
