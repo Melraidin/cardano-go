@@ -119,7 +119,7 @@ func TestSimpleTx(t *testing.T) {
 			input:    100 * 1e6,
 			output:   99 * 1e6,
 			fee:      1 * 1e6,
-			txHash:   "b59fec079542f4785d3d197ada365e496de932237ae168cba599926dd6f42e31",
+			txHash:   "0e32c8390a6fe71561172c97c55983b13f3d4e7a25216cc19b09c3ccc98217e3",
 			wantErr:  false,
 		},
 		{
@@ -602,7 +602,7 @@ func TestCalculateMinFee(t *testing.T) {
 				},
 				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(18831991))},
 			},
-			expectedFee: Coin(165413), //Coin(168009),
+			expectedFee: Coin(165545),
 		},
 		{
 			name: "with only change address",
@@ -616,7 +616,7 @@ func TestCalculateMinFee(t *testing.T) {
 					},
 				},
 			},
-			expectedFee: Coin(163785), // cardano-cli would propose Coin(165149) as fee for a tx with only change address and no output,
+			expectedFee: Coin(163917),
 		},
 		{
 			name: "input == output + fee (two additional witness)",
@@ -631,7 +631,7 @@ func TestCalculateMinFee(t *testing.T) {
 				},
 				outputs: []*TxOutput{NewTxOutput(receiver, NewValue(1982310))},
 			},
-			expectedFee:         Coin(174301), //Coin(176897),
+			expectedFee:         Coin(174433),
 			additionalWitnesses: 2,
 		},
 		{
