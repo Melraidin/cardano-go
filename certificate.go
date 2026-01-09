@@ -18,6 +18,7 @@ const (
 	MoveInstantaneousRewards
 	StakeUndelegation
 	StakeAuthCommitteeHotCertificate
+	StakeVote
 )
 
 type stakeRegistration struct {
@@ -52,6 +53,18 @@ type stakeAuthCommitteeHotCertificate struct {
 
 	// This appears to be a constant value from the protocol parameters.
 	KeyDeposit uint32
+}
+
+type stakeVote struct {
+	_               struct{} `cbor:",toarray"`
+	Type            CertificateType
+	StakeCredential StakeCredential
+	DRepVoteType    dRepVoteType
+}
+
+type dRepVoteType struct {
+	_        struct{} `cbor:",toarray"`
+	VoteType uint64
 }
 
 type stakeUndelegation struct {
@@ -111,6 +124,8 @@ type Certificate struct {
 	Epoch                       uint64
 	AuthCommitteeHotCertificate *stakeAuthCommitteeHotCertificate
 	Undelegation                *stakeUndelegation
+	Vote                        *stakeVote
+
 	// Genesis fields
 	GenesisHash         Hash28
 	GenesisDelegateHash Hash28
@@ -178,6 +193,14 @@ func (c *Certificate) MarshalCBOR() ([]byte, error) {
 			GenesisHash:         c.GenesisHash,
 			GenesisDelegateHash: c.GenesisDelegateHash,
 			VrfKeyHash:          c.VrfKeyHash,
+		}
+	case StakeVote:
+		cert = stakeVote{
+			Type:            c.Type,
+			StakeCredential: c.StakeCredential,
+			DRepVoteType: dRepVoteType{
+				VoteType: c.Vote.DRepVoteType.VoteType,
+			},
 		}
 	}
 
@@ -299,6 +322,14 @@ func (c *Certificate) UnmarshalCBOR(data []byte) error {
 		}
 		c.Type = StakeUndelegation
 		c.Undelegation = cert
+	case StakeVote:
+		cert := &stakeVote{}
+		if err := cborDec.Unmarshal(data, cert); err != nil {
+			return err
+		}
+		c.Type = StakeVote
+		c.StakeCredential = cert.StakeCredential
+		c.Vote = cert
 	}
 
 	return nil
