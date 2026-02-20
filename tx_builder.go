@@ -148,8 +148,7 @@ func (tb *TxBuilder) MinCoinsForTxOut(txOut *TxOutput) Coin {
 	}
 
 	data, _ := cborEnc.Marshal(txOut)
-	//fmt.Println(err, len(b))
-	return Coin(160 + len(data) ) * tb.protocol.CoinsPerUTXOWord
+	return Coin(160+len(data)) * tb.protocol.CoinsPerUTXOWord
 }
 
 // Calculate minimum lovelace a transaction output needs to hold post alonzo.

@@ -120,7 +120,8 @@ func (v *Value) Sub(rhs *Value) *Value {
 			if _, policyExists := current.m[policy]; policyExists {
 				if _, assetExists := result.MultiAsset.m[policy].m[assetName]; assetExists {
 					lastValue := current.m[policy].m[assetName]
-					if lastValue > lastValue-value {
+
+					if lastValue > value {
 						current.m[policy].m[assetName] -= value
 					} else {
 						current.m[policy].m[assetName] = 0
@@ -154,14 +155,14 @@ func (v *Value) Sub(rhs *Value) *Value {
 }
 
 // Compares two Values and returns
-//      -1 if v < rhs
-//       0 if v == rhs
-//       1 if v > rhs
-//       2 if not comparable
+//
+//	-1 if v < rhs
+//	 0 if v == rhs
+//	 1 if v > rhs
+//	 2 if not comparable
 func (v *Value) Cmp(rhs *Value) int {
 	lrZero := v.Sub(rhs).IsZero()
 	rlZero := rhs.Sub(v).IsZero()
-
 	if !lrZero && !rlZero {
 		return 2
 	} else if lrZero && !rlZero {

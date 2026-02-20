@@ -35,31 +35,31 @@ func TestMinUTXO(t *testing.T) {
 			name:     "One policyID, one 0-character asset name",
 			policies: []int{0},
 			assets:   []string{""},
-			minUTXO:  Coin(1310316),
+			minUTXO:  Coin(857690),
 		},
 		{
 			name:     "One policyID, one 1-character asset name",
 			policies: []int{0},
 			assets:   []string{"a"},
-			minUTXO:  Coin(1344798),
+			minUTXO:  Coin(862000),
 		},
 		{
 			name:     "One policyID, three 1-character asset name",
 			policies: []int{0},
 			assets:   []string{"a", "b", "c"},
-			minUTXO:  Coin(1448244),
+			minUTXO:  Coin(887860),
 		},
 		{
 			name:     "Two policyIDs, one 0-character asset name",
 			policies: []int{0, 1},
 			assets:   []string{""},
-			minUTXO:  Coin(1482726),
+			minUTXO:  Coin(999920),
 		},
 		{
 			name:     "Two policyIDs, one 1-character asset name",
 			policies: []int{0, 1},
 			assets:   []string{"a"},
-			minUTXO:  Coin(1517208),
+			minUTXO:  Coin(1008540),
 		},
 		// ## Impossible to have 96 1-character asset name
 		// {
