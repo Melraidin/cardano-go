@@ -65,7 +65,7 @@ func NewLegacyAddressFromBytes(bytes []byte) (Address, error) {
 
 // NewAddressFromBytes creates an Address from bytes.
 func NewAddressFromBytes(bytes []byte) (Address, error) {
-	if _bytes.Equal(bytes[:4], []byte{130, 216, 24, 88}) {
+	if len(bytes) >= 4 && _bytes.Equal(bytes[:4], []byte{130, 216, 24, 88}) {
 		return NewLegacyAddressFromBytes(bytes)
 	}
 
