@@ -71,10 +71,59 @@ func (tx *Tx) MarshalCBOR() ([]byte, error) {
 	return cborEnc.Marshal(rawTx(*tx))
 }
 
+type Redeemer struct {
+	_              struct{} `cbor:",toarray"`
+	Tag            uint64
+	Index          uint64
+	Data           []byte
+	ExecutionUnits []uint64
+}
+
+func (r *Redeemer) MarshalCBOR() ([]byte, error) {
+	type taggedRedeemer struct {
+		_              struct{} `cbor:",toarray"`
+		Tag            uint64
+		Index          uint64
+		Data           cbor.Tag
+		ExecutionUnits []uint64
+	}
+
+	tagged := taggedRedeemer{
+		Tag:   r.Tag,
+		Index: r.Index,
+		Data: cbor.Tag{Number: 121, Content: struct {
+			_ struct{} `cbor:",toarray"`
+		}{}},
+		ExecutionUnits: r.ExecutionUnits,
+	}
+
+	return cborEnc.Marshal(tagged)
+}
+
 // WitnessSet represents the witnesses of the transaction.
 type WitnessSet struct {
 	VKeyWitnessSet []VKeyWitness  `cbor:"0,keyasint,omitempty"`
 	Scripts        []NativeScript `cbor:"1,keyasint,omitempty"`
+	Redeemers      []Redeemer     `cbor:"5,keyasint,omitempty"`
+	PlutusScripts  cbor.Tag       `cbor:"7,keyasint,omitempty"`
+}
+
+func (ws *WitnessSet) MarshalCBOR() ([]byte, error) {
+	type taggedTx struct {
+		VKeyWitnessSet cbor.Tag       `cbor:"0,keyasint,omitempty"`
+		Scripts        []NativeScript `cbor:"1,keyasint,omitempty"`
+		RedeemerSet    []Redeemer     `cbor:"5,keyasint,omitempty"`
+		PlutusScripts  cbor.Tag       `cbor:"7,keyasint,omitempty"`
+	}
+
+	tagged := taggedTx{
+		VKeyWitnessSet: cbor.Tag{Number: 258, Content: ws.VKeyWitnessSet},
+		Scripts:        ws.Scripts,
+		RedeemerSet:    ws.Redeemers,
+		PlutusScripts:  ws.PlutusScripts,
+	}
+
+	return cborEnc.Marshal(tagged)
 }
 
 // VKeyWitness is a witnesss that uses verification keys.
@@ -141,6 +190,24 @@ func (do *DatumOption) String() string {
 	default:
 		return fmt.Sprintf("%v", *do)
 	}
+}
+
+func (body *DatumOption) MarshalCBOR() ([]byte, error) {
+	type taggedDatumOption struct {
+		_    struct{} `cbor:",toarray"`
+		Type DatumType
+		Data cbor.Tag
+	}
+
+	tagged := taggedDatumOption{
+		Type: DatumTypeData,
+		Data: cbor.Tag{
+			Number:  24,
+			Content: body.Data,
+		},
+	}
+
+	return cborEnc.Marshal(tagged)
 }
 
 // TxLegacyOutput is the transaction output before alonzo, shelley-mary-allegra.
@@ -324,8 +391,8 @@ func (body *TxBody) MarshalCBOR() ([]byte, error) {
 		ValidityIntervalStart Uint64        `cbor:"8,keyasint,omitempty"`
 		Mint                  *Mint         `cbor:"9,keyasint,omitempty"`
 		ScriptDataHash        *Hash32       `cbor:"11,keyasint,omitempty"`
-		Collateral            []*TxInput    `cbor:"13,keyasint,omitempty"`
-		RequiredSigners       []AddrKeyHash `cbor:"14,keyasint,omitempty"`
+		Collateral            cbor.Tag      `cbor:"13,keyasint,omitempty"`
+		RequiredSigners       cbor.Tag      `cbor:"14,keyasint,omitempty"`
 		NetworkID             Uint64        `cbor:"15,keyasint,omitempty"`
 		CollateralReturn      *TxOutput     `cbor:"16,keyasint,omitempty"`
 		TotalCollateral       Coin          `cbor:"17,keyasint,omitempty"`
@@ -348,12 +415,18 @@ func (body *TxBody) MarshalCBOR() ([]byte, error) {
 		ValidityIntervalStart: body.ValidityIntervalStart,
 		Mint:                  body.Mint,
 		ScriptDataHash:        body.ScriptDataHash,
-		Collateral:            body.Collateral,
-		RequiredSigners:       body.RequiredSigners,
-		NetworkID:             body.NetworkID,
-		CollateralReturn:      body.CollateralReturn,
-		TotalCollateral:       body.TotalCollateral,
-		ReferenceInputs:       body.ReferenceInputs,
+		Collateral: cbor.Tag{
+			Number:  258,
+			Content: body.Collateral,
+		},
+		RequiredSigners: cbor.Tag{
+			Number:  258,
+			Content: body.RequiredSigners,
+		},
+		NetworkID:        body.NetworkID,
+		CollateralReturn: body.CollateralReturn,
+		TotalCollateral:  body.TotalCollateral,
+		ReferenceInputs:  body.ReferenceInputs,
 	}
 
 	return cborEnc.Marshal(tagged)
