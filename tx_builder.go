@@ -88,7 +88,7 @@ func (tb *TxBuilder) AddNativeScript(script NativeScript) {
 
 // AddPlutusScript adds a plutus script to the transaction.
 func (tb *TxBuilder) AddPlutusScript(script []byte) {
-	tb.tx.WitnessSet.PlutusScripts = cbor.Tag{
+	tb.tx.WitnessSet.PlutusScripts = &cbor.Tag{
 		Number:  258,
 		Content: []any{script},
 	}

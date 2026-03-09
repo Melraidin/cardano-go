@@ -105,7 +105,7 @@ type WitnessSet struct {
 	VKeyWitnessSet []VKeyWitness  `cbor:"0,keyasint,omitempty"`
 	Scripts        []NativeScript `cbor:"1,keyasint,omitempty"`
 	Redeemers      []Redeemer     `cbor:"5,keyasint,omitempty"`
-	PlutusScripts  cbor.Tag       `cbor:"7,keyasint,omitempty"`
+	PlutusScripts  *cbor.Tag      `cbor:"7,keyasint,omitempty"`
 }
 
 func (ws *WitnessSet) MarshalCBOR() ([]byte, error) {
@@ -113,7 +113,7 @@ func (ws *WitnessSet) MarshalCBOR() ([]byte, error) {
 		VKeyWitnessSet cbor.Tag       `cbor:"0,keyasint,omitempty"`
 		Scripts        []NativeScript `cbor:"1,keyasint,omitempty"`
 		RedeemerSet    []Redeemer     `cbor:"5,keyasint,omitempty"`
-		PlutusScripts  cbor.Tag       `cbor:"7,keyasint,omitempty"`
+		PlutusScripts  *cbor.Tag      `cbor:"7,keyasint,omitempty"`
 	}
 
 	tagged := taggedTx{
@@ -391,8 +391,8 @@ func (body *TxBody) MarshalCBOR() ([]byte, error) {
 		ValidityIntervalStart Uint64        `cbor:"8,keyasint,omitempty"`
 		Mint                  *Mint         `cbor:"9,keyasint,omitempty"`
 		ScriptDataHash        *Hash32       `cbor:"11,keyasint,omitempty"`
-		Collateral            cbor.Tag      `cbor:"13,keyasint,omitempty"`
-		RequiredSigners       cbor.Tag      `cbor:"14,keyasint,omitempty"`
+		Collateral            *cbor.Tag     `cbor:"13,keyasint,omitempty"`
+		RequiredSigners       *cbor.Tag     `cbor:"14,keyasint,omitempty"`
 		NetworkID             Uint64        `cbor:"15,keyasint,omitempty"`
 		CollateralReturn      *TxOutput     `cbor:"16,keyasint,omitempty"`
 		TotalCollateral       Coin          `cbor:"17,keyasint,omitempty"`
@@ -415,18 +415,24 @@ func (body *TxBody) MarshalCBOR() ([]byte, error) {
 		ValidityIntervalStart: body.ValidityIntervalStart,
 		Mint:                  body.Mint,
 		ScriptDataHash:        body.ScriptDataHash,
-		Collateral: cbor.Tag{
+		NetworkID:             body.NetworkID,
+		CollateralReturn:      body.CollateralReturn,
+		TotalCollateral:       body.TotalCollateral,
+		ReferenceInputs:       body.ReferenceInputs,
+	}
+
+	if len(body.Collateral) > 0 {
+		tagged.Collateral = &cbor.Tag{
 			Number:  258,
 			Content: body.Collateral,
-		},
-		RequiredSigners: cbor.Tag{
+		}
+	}
+
+	if len(body.RequiredSigners) > 0 {
+		tagged.RequiredSigners = &cbor.Tag{
 			Number:  258,
 			Content: body.RequiredSigners,
-		},
-		NetworkID:        body.NetworkID,
-		CollateralReturn: body.CollateralReturn,
-		TotalCollateral:  body.TotalCollateral,
-		ReferenceInputs:  body.ReferenceInputs,
+		}
 	}
 
 	return cborEnc.Marshal(tagged)
