@@ -91,6 +91,32 @@ func TestTxEncoding(t *testing.T) {
 	}
 }
 
+func TestRedeemerMarshalCBOREmptyDataUsesTaggedEmptyArray(t *testing.T) {
+	redeemer := Redeemer{
+		Tag:            0,
+		Index:          1,
+		ExecutionUnits: []uint64{2, 3},
+	}
+
+	data, err := redeemer.MarshalCBOR()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var decoded []cbor.RawMessage
+	if err := cbor.Unmarshal(data, &decoded); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(decoded) != 4 {
+		t.Fatalf("expected 4 redeemer fields, got %d", len(decoded))
+	}
+
+	if got := hex.EncodeToString(decoded[2]); got != "d87980" {
+		t.Fatalf("expected empty redeemer data to encode as tag 121 empty array, got %s", got)
+	}
+}
+
 func TestCertificateEncoding(t *testing.T) {
 	testcases := []struct {
 		name    string

@@ -3,6 +3,7 @@ package cardano
 import (
 	"encoding/hex"
 	"fmt"
+	"sort"
 
 	cborv2 "github.com/fxamacker/cbor/v2"
 	"github.com/melraidin/cardano-go/crypto"
@@ -71,10 +72,179 @@ func (tx *Tx) MarshalCBOR() ([]byte, error) {
 	return cborEnc.Marshal(rawTx(*tx))
 }
 
+type Redeemer struct {
+	_              struct{} `cbor:",toarray"`
+	Tag            uint64
+	Index          uint64
+	Data           []byte
+	ExecutionUnits []uint64
+}
+
+func (r *Redeemer) UnmarshalCBOR(data []byte) error {
+	type rawRedeemer struct {
+		_              struct{} `cbor:",toarray"`
+		Tag            uint64
+		Index          uint64
+		Data           cbor.RawMessage
+		ExecutionUnits []uint64
+	}
+
+	var rr rawRedeemer
+	if err := cborDec.Unmarshal(data, &rr); err != nil {
+		return err
+	}
+
+	r.Tag = rr.Tag
+	r.Index = rr.Index
+	r.Data = append(r.Data[:0], rr.Data...)
+	r.ExecutionUnits = append(r.ExecutionUnits[:0], rr.ExecutionUnits...)
+	return nil
+}
+
+func (r *Redeemer) MarshalCBOR() ([]byte, error) {
+	type rawRedeemer struct {
+		_              struct{} `cbor:",toarray"`
+		Tag            uint64
+		Index          uint64
+		Data           cbor.RawMessage
+		ExecutionUnits []uint64
+	}
+
+	redeemerData := cbor.RawMessage(r.Data)
+	if len(redeemerData) == 0 {
+		emptyData, err := cborEnc.Marshal(cbor.Tag{Number: 121, Content: struct {
+			_ struct{} `cbor:",toarray"`
+		}{}})
+		if err != nil {
+			return nil, err
+		}
+		redeemerData = emptyData
+	}
+
+	tagged := rawRedeemer{
+		Tag:            r.Tag,
+		Index:          r.Index,
+		Data:           redeemerData,
+		ExecutionUnits: r.ExecutionUnits,
+	}
+
+	return cborEnc.Marshal(tagged)
+}
+
 // WitnessSet represents the witnesses of the transaction.
 type WitnessSet struct {
 	VKeyWitnessSet []VKeyWitness  `cbor:"0,keyasint,omitempty"`
 	Scripts        []NativeScript `cbor:"1,keyasint,omitempty"`
+	Redeemers      []Redeemer     `cbor:"5,keyasint,omitempty"`
+	PlutusScripts  *cbor.Tag      `cbor:"7,keyasint,omitempty"`
+}
+
+func (ws *WitnessSet) UnmarshalCBOR(data []byte) error {
+	rawFields := map[uint64]cbor.RawMessage{}
+	if err := cborDec.Unmarshal(data, &rawFields); err != nil {
+		return err
+	}
+
+	if field, ok := rawFields[0]; ok {
+		if err := cborDec.Unmarshal(field, &ws.VKeyWitnessSet); err != nil {
+			return err
+		}
+	}
+
+	if field, ok := rawFields[1]; ok {
+		if err := cborDec.Unmarshal(field, &ws.Scripts); err != nil {
+			return err
+		}
+	}
+
+	if field, ok := rawFields[5]; ok {
+		redeemers, err := unmarshalRedeemers(field)
+		if err != nil {
+			return err
+		}
+		ws.Redeemers = redeemers
+	}
+
+	if field, ok := rawFields[7]; ok {
+		var plutusScripts cbor.Tag
+		if err := cborDec.Unmarshal(field, &plutusScripts); err != nil {
+			return err
+		}
+		ws.PlutusScripts = &plutusScripts
+	}
+
+	return nil
+}
+
+func unmarshalRedeemers(data []byte) ([]Redeemer, error) {
+	type redeemerPointer struct {
+		_     struct{} `cbor:",toarray"`
+		Tag   uint64
+		Index uint64
+	}
+
+	type redeemerValue struct {
+		_              struct{} `cbor:",toarray"`
+		Data           cbor.RawMessage
+		ExecutionUnits []uint64
+	}
+
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	switch data[0] & 0xe0 {
+	case 0x80:
+		var redeemers []Redeemer
+		if err := cborDec.Unmarshal(data, &redeemers); err != nil {
+			return nil, err
+		}
+		return redeemers, nil
+	case 0xa0:
+		var redeemerMap map[redeemerPointer]redeemerValue
+		if err := cborDec.Unmarshal(data, &redeemerMap); err != nil {
+			return nil, err
+		}
+
+		redeemers := make([]Redeemer, 0, len(redeemerMap))
+		for ptr, value := range redeemerMap {
+			redeemers = append(redeemers, Redeemer{
+				Tag:            ptr.Tag,
+				Index:          ptr.Index,
+				Data:           append([]byte(nil), value.Data...),
+				ExecutionUnits: append([]uint64(nil), value.ExecutionUnits...),
+			})
+		}
+
+		sort.Slice(redeemers, func(i, j int) bool {
+			if redeemers[i].Tag != redeemers[j].Tag {
+				return redeemers[i].Tag < redeemers[j].Tag
+			}
+			return redeemers[i].Index < redeemers[j].Index
+		})
+
+		return redeemers, nil
+	default:
+		return nil, fmt.Errorf("unsupported redeemer set type: 0x%x", data[0])
+	}
+}
+
+func (ws *WitnessSet) MarshalCBOR() ([]byte, error) {
+	type taggedTx struct {
+		VKeyWitnessSet cbor.Tag       `cbor:"0,keyasint,omitempty"`
+		Scripts        []NativeScript `cbor:"1,keyasint,omitempty"`
+		RedeemerSet    []Redeemer     `cbor:"5,keyasint,omitempty"`
+		PlutusScripts  *cbor.Tag      `cbor:"7,keyasint,omitempty"`
+	}
+
+	tagged := taggedTx{
+		VKeyWitnessSet: cbor.Tag{Number: 258, Content: ws.VKeyWitnessSet},
+		Scripts:        ws.Scripts,
+		RedeemerSet:    ws.Redeemers,
+		PlutusScripts:  ws.PlutusScripts,
+	}
+
+	return cborEnc.Marshal(tagged)
 }
 
 // VKeyWitness is a witnesss that uses verification keys.
@@ -141,6 +311,24 @@ func (do *DatumOption) String() string {
 	default:
 		return fmt.Sprintf("%v", *do)
 	}
+}
+
+func (body *DatumOption) MarshalCBOR() ([]byte, error) {
+	type taggedDatumOption struct {
+		_    struct{} `cbor:",toarray"`
+		Type DatumType
+		Data cbor.Tag
+	}
+
+	tagged := taggedDatumOption{
+		Type: DatumTypeData,
+		Data: cbor.Tag{
+			Number:  24,
+			Content: body.Data,
+		},
+	}
+
+	return cborEnc.Marshal(tagged)
 }
 
 // TxLegacyOutput is the transaction output before alonzo, shelley-mary-allegra.
@@ -308,6 +496,18 @@ type TxBody struct {
 	ReferenceInputs       []*TxInput    `cbor:"18,keyasint,omitempty"`
 }
 
+func (body *TxBody) UnmarshalCBOR(data []byte) error {
+	type rawTxBody TxBody
+	var rtb rawTxBody
+
+	if err := cborDec.Unmarshal(data, &rtb); err != nil {
+		return err
+	}
+
+	*body = TxBody(rtb)
+	return nil
+}
+
 // MarshalCBOR implements cbor.Marshaler for TxBody.
 // It applies CBOR tag 258 to the Inputs array to match cardano-cli output format.
 func (body *TxBody) MarshalCBOR() ([]byte, error) {
@@ -324,8 +524,8 @@ func (body *TxBody) MarshalCBOR() ([]byte, error) {
 		ValidityIntervalStart Uint64        `cbor:"8,keyasint,omitempty"`
 		Mint                  *Mint         `cbor:"9,keyasint,omitempty"`
 		ScriptDataHash        *Hash32       `cbor:"11,keyasint,omitempty"`
-		Collateral            []*TxInput    `cbor:"13,keyasint,omitempty"`
-		RequiredSigners       []AddrKeyHash `cbor:"14,keyasint,omitempty"`
+		Collateral            *cbor.Tag     `cbor:"13,keyasint,omitempty"`
+		RequiredSigners       *cbor.Tag     `cbor:"14,keyasint,omitempty"`
 		NetworkID             Uint64        `cbor:"15,keyasint,omitempty"`
 		CollateralReturn      *TxOutput     `cbor:"16,keyasint,omitempty"`
 		TotalCollateral       Coin          `cbor:"17,keyasint,omitempty"`
@@ -348,12 +548,24 @@ func (body *TxBody) MarshalCBOR() ([]byte, error) {
 		ValidityIntervalStart: body.ValidityIntervalStart,
 		Mint:                  body.Mint,
 		ScriptDataHash:        body.ScriptDataHash,
-		Collateral:            body.Collateral,
-		RequiredSigners:       body.RequiredSigners,
 		NetworkID:             body.NetworkID,
 		CollateralReturn:      body.CollateralReturn,
 		TotalCollateral:       body.TotalCollateral,
 		ReferenceInputs:       body.ReferenceInputs,
+	}
+
+	if len(body.Collateral) > 0 {
+		tagged.Collateral = &cbor.Tag{
+			Number:  258,
+			Content: body.Collateral,
+		}
+	}
+
+	if len(body.RequiredSigners) > 0 {
+		tagged.RequiredSigners = &cbor.Tag{
+			Number:  258,
+			Content: body.RequiredSigners,
+		}
 	}
 
 	return cborEnc.Marshal(tagged)

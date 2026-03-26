@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/melraidin/cardano-go/crypto"
+	"github.com/melraidin/cardano-go/internal/cbor"
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -83,6 +84,18 @@ func (tb *TxBuilder) AddCertificate(cert Certificate) {
 // AddNativeScript adds a native script to the transaction.
 func (tb *TxBuilder) AddNativeScript(script NativeScript) {
 	tb.tx.WitnessSet.Scripts = append(tb.tx.WitnessSet.Scripts, script)
+}
+
+// AddPlutusScript adds a plutus script to the transaction.
+func (tb *TxBuilder) AddPlutusScript(script []byte) {
+	tb.tx.WitnessSet.PlutusScripts = &cbor.Tag{
+		Number:  258,
+		Content: []any{script},
+	}
+}
+
+func (tb *TxBuilder) AddRedeemer(redeemer Redeemer) {
+	tb.tx.WitnessSet.Redeemers = append(tb.tx.WitnessSet.Redeemers, redeemer)
 }
 
 // Mint adds a new multiasset to mint.
@@ -337,7 +350,6 @@ func (tb *TxBuilder) build() error {
 		return err
 	}
 
-	//fmt.Println("unsign tx: ", hex.EncodeToString(tb.tx.Bytes()))
 	// Create witness set
 	tb.tx.WitnessSet.VKeyWitnessSet = make([]VKeyWitness, len(tb.pkeys))
 	for i, pkey := range tb.pkeys {
